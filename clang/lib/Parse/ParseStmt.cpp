@@ -1492,9 +1492,25 @@ StmtResult Parser::ParseInspectStatement(SourceLocation *TrailingElseLoc) {
 
   // inspect (...) { }
   //               ^
+
+  StmtResult Inspect = Actions.ActOnStartOfInspectStmt(InspectLoc, InitStmt.get(), Cond);
+
+  if (Inspect.isInvalid()) {
+    // Skip the inspect body.
+    if (Tok.is(tok::l_brace)) {
+      ConsumeBrace();
+      SkipUntil(tok::r_brace);
+    } else
+      SkipUntil(tok::semi);
+    return Inspect;
+  }
+
   // See comments in ParseIfStatement for why we create a scope for the
   // condition and a new scope for substatement in C++.
   ParseScope InnerScope(this, Scope::DeclScope, true, Tok.is(tok::l_brace));
+
+  getCurScope()->decrementMSManglingNumber();
+
   // Read the body statement.
   StmtResult Body(ParseStatement(TrailingElseLoc));
 
@@ -1502,7 +1518,7 @@ StmtResult Parser::ParseInspectStatement(SourceLocation *TrailingElseLoc) {
   InnerScope.Exit();
   InspectScope.Exit();
 
-  return StmtError();
+  return Actions.ActOnFinishInspectStmt(InspectLoc, Inspect.get(), Body.get());
 }
 
 /// ParseWhileStatement
