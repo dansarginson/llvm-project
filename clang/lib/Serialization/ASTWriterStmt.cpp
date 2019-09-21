@@ -181,6 +181,18 @@ void ASTStmtWriter::VisitSwitchStmt(SwitchStmt *S) {
   Code = serialization::STMT_SWITCH;
 }
 
+void ASTStmtWriter::VisitInspectStmt(InspectStmt *S) {
+}
+
+void ASTStmtWriter::VisitWildcardPatternStmt(WildcardPatternStmt *S) {
+}
+
+void ASTStmtWriter::VisitIdentifierPatternStmt(IdentifierPatternStmt *S) {
+}
+
+void ASTStmtWriter::VisitExpressionPatternStmt(ExpressionPatternStmt *S) {
+}
+
 void ASTStmtWriter::VisitWhileStmt(WhileStmt *S) {
   VisitStmt(S);
 

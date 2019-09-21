@@ -268,6 +268,18 @@ void ASTStmtReader::VisitSwitchStmt(SwitchStmt *S) {
   }
 }
 
+void ASTStmtReader::VisitInspectStmt(InspectStmt *S) {
+}
+
+void ASTStmtReader::VisitWildcardPatternStmt(WildcardPatternStmt *S) {
+}
+
+void ASTStmtReader::VisitIdentifierPatternStmt(IdentifierPatternStmt *S) {
+}
+
+void ASTStmtReader::VisitExpressionPatternStmt(ExpressionPatternStmt *S) {
+}
+
 void ASTStmtReader::VisitWhileStmt(WhileStmt *S) {
   VisitStmt(S);
 

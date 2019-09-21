@@ -26,6 +26,11 @@ def SwitchCase : Stmt<1>;
 def CaseStmt : DStmt<SwitchCase>;
 def DefaultStmt : DStmt<SwitchCase>;
 def CapturedStmt : Stmt;
+def InspectStmt : Stmt;
+def PatternStmt : Stmt<1>;
+def WildcardPatternStmt : DStmt<PatternStmt>;
+def IdentifierPatternStmt : DStmt<PatternStmt>;
+def ExpressionPatternStmt : DStmt<PatternStmt>;
 
 // Statements that might produce a value (for example, as the last non-null
 // statement in a GNU statement-expression).

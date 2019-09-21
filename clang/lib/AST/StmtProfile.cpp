@@ -269,6 +269,18 @@ void StmtProfiler::VisitSwitchStmt(const SwitchStmt *S) {
   VisitDecl(S->getConditionVariable());
 }
 
+void StmtProfiler::VisitInspectStmt(const InspectStmt *S) {
+}
+
+void StmtProfiler::VisitWildcardPatternStmt(const WildcardPatternStmt *S) {
+}
+
+void StmtProfiler::VisitIdentifierPatternStmt(const IdentifierPatternStmt *S) {
+}
+
+void StmtProfiler::VisitExpressionPatternStmt(const ExpressionPatternStmt *S) {
+}
+
 void StmtProfiler::VisitWhileStmt(const WhileStmt *S) {
   VisitStmt(S);
   VisitDecl(S->getConditionVariable());

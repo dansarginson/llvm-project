@@ -292,6 +292,18 @@ void StmtPrinter::VisitSwitchStmt(SwitchStmt *Node) {
   PrintControlledStmt(Node->getBody());
 }
 
+void StmtPrinter::VisitInspectStmt(InspectStmt *Node) {
+}
+
+void StmtPrinter::VisitWildcardPatternStmt(WildcardPatternStmt *Node) {
+}
+
+void StmtPrinter::VisitIdentifierPatternStmt(IdentifierPatternStmt *Node) {
+}
+
+void StmtPrinter::VisitExpressionPatternStmt(ExpressionPatternStmt *Node) {
+}
+
 void StmtPrinter::VisitWhileStmt(WhileStmt *Node) {
   Indent() << "while (";
   if (const DeclStmt *DS = Node->getConditionVariableDeclStmt())

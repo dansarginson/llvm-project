@@ -513,6 +513,26 @@ public:
   }
 };
 
+/// Pattern Matching: PatternStmt is the base class for WildcardPatternStmt, 
+/// IdentifierPatternStmt and ExpressionPatternStmt
+class PatternStmt : public Stmt {
+};
+
+class WildcardPatternStmt final
+  : public PatternStmt {
+};
+
+class IdentifierPatternStmt final
+  : public PatternStmt {
+};
+
+class ExpressionPatternStmt final
+  : public PatternStmt {
+};
+
+/// InspectStmt - This represents an 'inspect' stmt.
+class InspectStmt final : public Stmt {
+};
 }  // end namespace clang
 
 #endif

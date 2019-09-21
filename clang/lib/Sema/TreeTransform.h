@@ -6862,6 +6862,30 @@ TreeTransform<Derived>::TransformSwitchStmt(SwitchStmt *S) {
 
 template<typename Derived>
 StmtResult
+TreeTransform<Derived>::TransformInspectStmt(InspectStmt *S) {
+  return StmtError();
+}
+
+template<typename Derived>
+StmtResult
+TreeTransform<Derived>::TransformWildcardPatternStmt(WildcardPatternStmt *S) {
+  return StmtError();
+}
+
+template<typename Derived>
+StmtResult
+TreeTransform<Derived>::TransformIdentifierPatternStmt(IdentifierPatternStmt *S) {
+  return StmtError();
+}
+
+template<typename Derived>
+StmtResult
+TreeTransform<Derived>::TransformExpressionPatternStmt(ExpressionPatternStmt *S) {
+  return StmtError();
+}
+
+template<typename Derived>
+StmtResult
 TreeTransform<Derived>::TransformWhileStmt(WhileStmt *S) {
   // Transform the condition
   Sema::ConditionResult Cond = getDerived().TransformCondition(
