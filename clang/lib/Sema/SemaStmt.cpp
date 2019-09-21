@@ -514,6 +514,27 @@ Sema::ActOnDefaultStmt(SourceLocation DefaultLoc, SourceLocation ColonLoc,
   return DS;
 }
 
+StmtResult Sema::ActOnWildcardPattern(Token IdentTok,
+                                      SourceLocation ColonLoc,
+                                      Stmt *SubStmt) {
+
+  return StmtError();
+}
+
+StmtResult Sema::ActOnIdentifierPattern(Token IdentTok,
+                                        SourceLocation ColonLoc,
+                                        Stmt *SubStmt) {
+
+  return StmtError();
+}
+
+StmtResult Sema::ActOnExpressionPattern(Expr *ConstExpr,
+                                        SourceLocation ColonLoc,
+                                        Stmt *SubStmt) {
+
+  return StmtError();
+}
+
 StmtResult
 Sema::ActOnLabelStmt(SourceLocation IdentLoc, LabelDecl *TheDecl,
                      SourceLocation ColonLoc, Stmt *SubStmt) {
@@ -754,7 +775,7 @@ StmtResult Sema::ActOnStartOfSwitchStmt(SourceLocation SwitchLoc,
 }
 
 StmtResult Sema::ActOnStartOfInspectStmt(SourceLocation InspectLoc,
-                                         Stmt *InitStmt, ConditionResult Cond) {
+                                         ConditionResult Cond) {
   Expr *CondExpr = Cond.get().second;
   assert((Cond.isInvalid() || CondExpr) && "inspect with no condition");
 

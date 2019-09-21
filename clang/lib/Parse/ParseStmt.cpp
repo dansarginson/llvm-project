@@ -677,22 +677,103 @@ StmtResult Parser::ParseLabeledStatement(ParsedAttributesWithRange &attrs,
 ///
 StmtResult Parser::ParsePatternStatement(ParsedAttributesWithRange &attrs,
                                          ParsedStmtContext StmtCtx) {
-  return StmtError();
+  if (Tok.is(tok::identifier)) {
+
+    // yuck, is there a better way to tell '__'
+    // from other valid identifiers in this context?
+    IdentifierInfo *II = Tok.getIdentifierInfo();
+    if (!II->getName().compare("__")) {
+      return ParseWildcardPattern(StmtCtx);
+    }
+
+    return ParseIdentifierPattern(StmtCtx);
+  }
+  
+  // not an identifier? Let's try to parse it
+  // as an expression pattern.
+  return ParseExpressionPattern(StmtCtx);
 }
 
 StmtResult Parser::ParseWildcardPattern(ParsedStmtContext StmtCtx) {
-  assert((Tok.is(tok::identifier)) && "Not an identifier pattern!");
+  assert((Tok.is(tok::identifier)) && "Not a wildcard pattern!");
 
-  return StmtError();
+  // '__' ':' statement
+  // ^
+
+  IdentifierInfo *II = Tok.getIdentifierInfo();
+  assert((!II->getName().compare("__")) && "Not a wildcard pattern!");
+
+  Token WildcardTok = Tok; // Save the whole token
+  ConsumeToken();          // eat the identifier
+
+    // '__' ':' statement
+    //      ^
+
+  assert(Tok.is(tok::colon) && "Not a wildcard pattern!");
+  SourceLocation ColonLoc = ConsumeToken();
+
+  // '__' ':' statement
+  //          ^
+
+  StmtResult SubStmt = ParseStatement(nullptr, StmtCtx);
+
+  // Broken substmt shouldn't prevent the identifier from being added to the
+  // AST.
+  if (SubStmt.isInvalid())
+    SubStmt = Actions.ActOnNullStmt(ColonLoc);
+
+  return Actions.ActOnWildcardPattern(WildcardTok, ColonLoc, SubStmt.get());
 }
 
 StmtResult Parser::ParseIdentifierPattern(ParsedStmtContext StmtCtx) {
   assert((Tok.is(tok::identifier)) && "Not an identifier pattern!");
 
+  // identifier ':' statement
+  // ^
+  Token IdentTok = Tok; // Save the whole token.
+  ConsumeToken();       // eat the identifier.
+
+  // identifier ':' statement
+  //            ^
+  assert(Tok.is(tok::colon) && "Not an identifier pattern!");
+  SourceLocation ColonLoc = ConsumeToken();
+
+  // identifier ':' statement
+  //                ^
+  StmtResult SubStmt = ParseStatement(nullptr, StmtCtx);
+
+  // Broken substmt shouldn't prevent the identifier from being added to the
+  // AST.
+  if (SubStmt.isInvalid())
+    SubStmt = Actions.ActOnNullStmt(ColonLoc);
+
+  return Actions.ActOnIdentifierPattern(IdentTok, ColonLoc, SubStmt.get());
 }
 
 StmtResult Parser::ParseExpressionPattern(ParsedStmtContext StmtCtx) {
-  return StmtError();
+
+  // constant-expression ':' statement
+  // ^
+  ExprResult EX = ParseConstantExpression();
+  if (EX.isInvalid()) {
+    return StmtError(Diag(Tok, diag::err_expected) << "constant expression");
+  }
+
+  // constant-expression ':' statement
+  //                     ^
+  assert(Tok.is(tok::colon) && "Not an identifier pattern!");
+  SourceLocation ColonLoc = ConsumeToken();
+
+  // constant-expression ':' statement
+  //                         ^
+  StmtResult SubStmt = ParseStatement(nullptr, StmtCtx);
+
+  // Broken substmt shouldn't prevent the identifier from being added to the
+  // AST.
+  if (SubStmt.isInvalid())
+    SubStmt = Actions.ActOnNullStmt(ColonLoc);
+
+  return Actions.ActOnExpressionPattern(EX.get(), ColonLoc, SubStmt.get());
 }
 
 /// ParseCaseStatement
@@ -1484,16 +1565,15 @@ StmtResult Parser::ParseInspectStatement(SourceLocation *TrailingElseLoc) {
   ParseScope InspectScope(this, Scope::InspectScope);
 
   // Parse the condition.
-  StmtResult InitStmt;
   Sema::ConditionResult Cond;
-  if (ParseParenExprOrCondition(&InitStmt, Cond, InspectLoc, Sema::ConditionKind::Inspect)) {
+  if (ParseParenExprOrCondition(nullptr, Cond, InspectLoc, Sema::ConditionKind::Inspect)) {
     return StmtError();
   }
 
   // inspect (...) { }
   //               ^
 
-  StmtResult Inspect = Actions.ActOnStartOfInspectStmt(InspectLoc, InitStmt.get(), Cond);
+  StmtResult Inspect = Actions.ActOnStartOfInspectStmt(InspectLoc, Cond);
 
   if (Inspect.isInvalid()) {
     // Skip the inspect body.

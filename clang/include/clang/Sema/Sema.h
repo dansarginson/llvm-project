@@ -3960,6 +3960,16 @@ public:
                                  ArrayRef<const Attr*> Attrs,
                                  Stmt *SubStmt);
 
+  // pattern matching patterns
+  StmtResult ActOnWildcardPattern(Token IdentTok,
+                                  SourceLocation ColonLoc,
+                                  Stmt *SubStmt);
+  StmtResult ActOnIdentifierPattern(Token IdentTok,
+                                    SourceLocation ColonLoc,
+                                    Stmt *SubStmt);
+  StmtResult ActOnExpressionPattern(Expr *ConstExpr,
+                                    SourceLocation ColonLoc,
+                                    Stmt *SubStmt);
   class ConditionResult;
   StmtResult ActOnIfStmt(SourceLocation IfLoc, bool IsConstexpr,
                          Stmt *InitStmt,
@@ -3975,7 +3985,6 @@ public:
   StmtResult ActOnFinishSwitchStmt(SourceLocation SwitchLoc,
                                            Stmt *Switch, Stmt *Body);
   StmtResult ActOnStartOfInspectStmt(SourceLocation InspectLoc,
-                                     Stmt *InitStmt,
                                      ConditionResult Cond);
   StmtResult ActOnFinishInspectStmt(SourceLocation InspectLoc,
                                     Stmt *Inspect, Stmt *Body);
