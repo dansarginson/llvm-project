@@ -134,6 +134,9 @@ public:
 
     /// This is the scope of a C++ catch statement.
     CatchScope = 0x1000000,
+    
+    /// This is the scope of a C++ inspect statement.
+    InspectScope = 0x2000000,
   };
 
 private:
@@ -399,6 +402,20 @@ public:
                                 Scope::BlockScope | Scope::TemplateParamScope |
                                 Scope::FunctionPrototypeScope |
                                 Scope::AtCatchScope | Scope::ObjCMethodScope))
+        return false;
+    }
+    return false;
+  }
+
+  /// isInspectScope - Return true if this scope is an inspect scope.
+  bool isInspectScope() const {
+    for (const Scope *S = this; S; S = S->getParent()) {
+      if (S->getFlags() & Scope::InspectScope)
+        return true;
+      else if (S->getFlags() & (Scope::FnScope | Scope::ClassScope |
+        Scope::BlockScope | Scope::TemplateParamScope |
+        Scope::FunctionPrototypeScope |
+        Scope::AtCatchScope | Scope::ObjCMethodScope))
         return false;
     }
     return false;
