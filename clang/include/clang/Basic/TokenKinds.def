@@ -38,6 +38,9 @@
 #ifndef MODULES_KEYWORD
 #define MODULES_KEYWORD(X) KEYWORD(X,KEYMODULES)
 #endif
+#ifndef PATMAT_KEYWORD
+#define PATMAT_KEYWORD(X) KEYWORD(X,KEYPATMAT)
+#endif
 #ifndef TYPE_TRAIT
 #define TYPE_TRAIT(N,I,K) KEYWORD(I,K)
 #endif
@@ -390,6 +393,9 @@ MODULES_KEYWORD(import)
 CXX2A_KEYWORD(char8_t               , CHAR8SUPPORT)
 CXX2A_KEYWORD(consteval             , 0)
 CXX2A_KEYWORD(constinit             , 0)
+
+// C++ 2b / pattern matching keywords
+PATMAT_KEYWORD(inspect)
 
 // C11 Extension
 KEYWORD(_Float16                    , KEYALL)
