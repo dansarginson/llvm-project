@@ -681,6 +681,10 @@ def fcoroutines_ts : Flag <["-"], "fcoroutines-ts">, Group<f_Group>,
 def fno_coroutines_ts : Flag <["-"], "fno-coroutines-ts">, Group<f_Group>,
   Flags<[DriverOption]>;
 
+def fpattern_matching : Flag <["-"], "fpattern-matching">, Group<f_Group>,
+  Flags<[DriverOption, CC1Option]>,
+  HelpText<"Enable support for C++ Pattern Matching">;
+
 def fembed_bitcode_EQ : Joined<["-"], "fembed-bitcode=">,
     Group<f_Group>, Flags<[DriverOption, CC1Option, CC1AsOption]>, MetaVarName<"<option>">,
     HelpText<"Embed LLVM bitcode (option: off, all, bitcode, marker)">;
