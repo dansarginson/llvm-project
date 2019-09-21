@@ -68,6 +68,10 @@ StmtResult Parser::ParseStatement(SourceLocation *TrailingElseLoc,
 ///         'case' constant-expression ':' statement
 ///         'default' ':' statement
 ///
+///       pattern-matching-statements:
+///         inspect-statement
+///	        pattern guard[opt] ':' statement
+///
 ///       selection-statement:
 ///         if-statement
 ///         switch-statement
@@ -253,6 +257,8 @@ Retry:
     return ParseIfStatement(TrailingElseLoc);
   case tok::kw_switch:              // C99 6.8.4.2: switch-statement
     return ParseSwitchStatement(TrailingElseLoc);
+  case tok::kw_inspect:              // C++ Pattern Matching: inspect-statement
+    return ParseInspectStatement(TrailingElseLoc);
 
   case tok::kw_while:               // C99 6.8.5.1: while-statement
     return ParseWhileStatement(TrailingElseLoc);
@@ -654,6 +660,33 @@ StmtResult Parser::ParseLabeledStatement(ParsedAttributesWithRange &attrs,
 
   return Actions.ActOnLabelStmt(IdentTok.getLocation(), LD, ColonLoc,
                                 SubStmt.get());
+}
+
+/// ParsePatternStatement - We have an pattern and a ':' after it.
+///
+///       pattern-statement:
+///         __ ':' statement
+///         identifier ':' statement
+///         constant-expression ':' statement
+///
+StmtResult Parser::ParsePatternStatement(ParsedAttributesWithRange &attrs,
+                                         ParsedStmtContext StmtCtx) {
+  return StmtError();
+}
+
+StmtResult Parser::ParseWildcardPattern(ParsedStmtContext StmtCtx) {
+  assert((Tok.is(tok::identifier)) && "Not an identifier pattern!");
+
+  return StmtError();
+}
+
+StmtResult Parser::ParseIdentifierPattern(ParsedStmtContext StmtCtx) {
+  assert((Tok.is(tok::identifier)) && "Not an identifier pattern!");
+
+}
+
+StmtResult Parser::ParseExpressionPattern(ParsedStmtContext StmtCtx) {
+  return StmtError();
 }
 
 /// ParseCaseStatement
@@ -1424,6 +1457,15 @@ StmtResult Parser::ParseSwitchStatement(SourceLocation *TrailingElseLoc) {
   SwitchScope.Exit();
 
   return Actions.ActOnFinishSwitchStmt(SwitchLoc, Switch.get(), Body.get());
+}
+
+/// ParseInspectStatement
+///       inspect-statement:
+/// [C++]   'inspect' '(' condition ')' statement
+StmtResult Parser::ParseInspectStatement(SourceLocation *TrailingElseLoc) {
+  assert(Tok.is(tok::kw_inspect) && "Not an inspect stmt!");
+
+  return StmtError();
 }
 
 /// ParseWhileStatement

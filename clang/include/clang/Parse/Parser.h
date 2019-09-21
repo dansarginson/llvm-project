@@ -1932,6 +1932,11 @@ private:
   StmtResult ParseExprStatement(ParsedStmtContext StmtCtx);
   StmtResult ParseLabeledStatement(ParsedAttributesWithRange &attrs,
                                    ParsedStmtContext StmtCtx);
+  StmtResult ParsePatternStatement(ParsedAttributesWithRange &attrs,
+                                   ParsedStmtContext StmtCtx);
+  StmtResult ParseWildcardPattern(ParsedStmtContext StmtCtx);
+  StmtResult ParseIdentifierPattern(ParsedStmtContext StmtCtx);
+  StmtResult ParseExpressionPattern(ParsedStmtContext StmtCtx);
   StmtResult ParseCaseStatement(ParsedStmtContext StmtCtx,
                                 bool MissingCase = false,
                                 ExprResult Expr = ExprResult());
@@ -1948,6 +1953,7 @@ private:
                                  Sema::ConditionKind CK);
   StmtResult ParseIfStatement(SourceLocation *TrailingElseLoc);
   StmtResult ParseSwitchStatement(SourceLocation *TrailingElseLoc);
+  StmtResult ParseInspectStatement(SourceLocation *TrailingElseLoc);
   StmtResult ParseWhileStatement(SourceLocation *TrailingElseLoc);
   StmtResult ParseDoStatement();
   StmtResult ParseForStatement(SourceLocation *TrailingElseLoc);
