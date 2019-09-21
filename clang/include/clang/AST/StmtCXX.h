@@ -531,7 +531,115 @@ class ExpressionPatternStmt final
 };
 
 /// InspectStmt - This represents an 'inspect' stmt.
-class InspectStmt final : public Stmt {
+class InspectStmt final : public Stmt,
+                          private llvm::TrailingObjects<InspectStmt, Stmt *> {
+  friend TrailingObjects;
+
+  /// Points to a linked list of patterns
+  PatternStmt *FirstPattern;
+
+  // InspectStmt is followed by two trailing objects.
+  // The trailing objects are in order:
+  //
+  // * A "Stmt *" for the condition.
+  //    Always present. This is in fact an "Expr *".
+  //
+  // * A "Stmt *" for the body.
+  //    Always present.
+  enum { CondOffset = 0, BodyOffsetFromCond = 1 };
+  enum { NumMandatoryStmtPtr = 2 };
+
+  unsigned numTrailingObjects(OverloadToken<Stmt *>) const {
+    return NumMandatoryStmtPtr;
+  }
+
+  unsigned condOffset() const {
+    return CondOffset;
+  }
+  unsigned bodyOffset() const { return condOffset() + BodyOffsetFromCond; }
+
+  /// Build an inspect statement.
+  InspectStmt(const ASTContext &Ctx, Expr *Cond);
+
+  /// Build an empty inspect statement.
+  explicit InspectStmt(EmptyShell Empty);
+
+public:
+  /// Create an inspect statement.
+  static InspectStmt *Create(const ASTContext &Ctx, Expr *Cond);
+
+  /// Create an empty inspect statement optionally with storage for
+  /// an init expression and a condition variable.
+  static InspectStmt *CreateEmpty(const ASTContext &Ctx);
+
+  Expr *getCond() {
+    return reinterpret_cast<Expr *>(getTrailingObjects<Stmt *>()[condOffset()]);
+  }
+
+  const Expr *getCond() const {
+    return reinterpret_cast<Expr *>(getTrailingObjects<Stmt *>()[condOffset()]);
+  }
+
+  void setCond(Expr *Cond) {
+    getTrailingObjects<Stmt *>()[condOffset()] = reinterpret_cast<Stmt *>(Cond);
+  }
+
+  Stmt *getBody() { return getTrailingObjects<Stmt *>()[bodyOffset()]; }
+  const Stmt *getBody() const {
+    return getTrailingObjects<Stmt *>()[bodyOffset()];
+  }
+
+  void setBody(Stmt *Body) {
+    getTrailingObjects<Stmt *>()[bodyOffset()] = Body;
+  }
+
+  PatternStmt *getPatternList() { return FirstPattern; }
+  const PatternStmt *getPatternList() const { return FirstPattern; }
+  void setPatternList(PatternStmt *SC) { FirstPattern = SC; }
+
+  SourceLocation getInspectLoc() const { return InspectStmtBits.InspectLoc; }
+  void setInspectLoc(SourceLocation L) { InspectStmtBits.InspectLoc = L; }
+
+  void setBody(Stmt *S, SourceLocation SL) {
+    setBody(S);
+    setInspectLoc(SL);
+  }
+
+  void addPattern(PatternStmt *SC) {
+     assert(!SC->getNextPattern() &&
+       "pattern already added to an inspect");
+
+     // note this logic was inherited from switch
+     // where the order of traversal of case/default
+     // statements doesn't matter. May have to revisit
+     // this to maintain the linked list in insertion
+     // order
+     SC->setNextPattern(FirstPattern);
+     FirstPattern = SC;
+  }
+
+  SourceLocation getBeginLoc() const { return getInspectLoc(); }
+  SourceLocation getEndLoc() const LLVM_READONLY {
+    return getBody() ? getBody()->getEndLoc()
+      : reinterpret_cast<const Stmt *>(getCond())->getEndLoc();
+  }
+
+  // Iterators
+  child_range children() {
+    return child_range(getTrailingObjects<Stmt *>(),
+      getTrailingObjects<Stmt *>() +
+      numTrailingObjects(OverloadToken<Stmt *>()));
+  }
+
+  const_child_range children() const {
+    return const_child_range(getTrailingObjects<Stmt *>(),
+      getTrailingObjects<Stmt *>() +
+      numTrailingObjects(OverloadToken<Stmt *>()));
+  }
+
+  static bool classof(const Stmt *T) {
+    return T->getStmtClass() == InspectStmtClass;
+  }
 };
 }  // end namespace clang
 

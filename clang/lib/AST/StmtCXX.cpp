@@ -125,3 +125,29 @@ CoroutineBodyStmt::CoroutineBodyStmt(CoroutineBodyStmt::CtorArgs const &Args)
   std::copy(Args.ParamMoves.begin(), Args.ParamMoves.end(),
             const_cast<Stmt **>(getParamMoves().data()));
 }
+
+InspectStmt::InspectStmt(const ASTContext &Ctx, Expr *Cond)
+  : Stmt(InspectStmtClass), FirstPattern(nullptr) {
+
+  setCond(Cond);
+  setBody(nullptr);
+  setInspectLoc(SourceLocation{});
+}
+
+InspectStmt::InspectStmt(EmptyShell Empty)
+  : Stmt(InspectStmtClass, Empty) {
+}
+
+InspectStmt *InspectStmt::Create(const ASTContext &Ctx, Expr *Cond) {
+  void *Mem = Ctx.Allocate(
+    totalSizeToAlloc<Stmt *>(NumMandatoryStmtPtr),
+    alignof(InspectStmt));
+  return new (Mem) InspectStmt(Ctx, Cond);
+}
+
+InspectStmt *InspectStmt::CreateEmpty(const ASTContext &Ctx) {
+  void *Mem = Ctx.Allocate(
+    totalSizeToAlloc<Stmt *>(NumMandatoryStmtPtr),
+    alignof(SwitchStmt));
+  return new (Mem) InspectStmt(EmptyShell());
+}
