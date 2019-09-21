@@ -516,19 +516,342 @@ public:
 /// Pattern Matching: PatternStmt is the base class for WildcardPatternStmt, 
 /// IdentifierPatternStmt and ExpressionPatternStmt
 class PatternStmt : public Stmt {
+protected:
+  /// The location of the ":".
+  SourceLocation ColonLoc;
+
+  /// A pointer to the following PatternStmt class in the same
+  /// inspect statement.
+  PatternStmt *NextPattern = nullptr;
+
+  PatternStmt(StmtClass SC, SourceLocation KWLoc, SourceLocation ColonLoc)
+    : Stmt(SC), ColonLoc(ColonLoc) {
+    setPatternLoc(KWLoc);
+  }
+
+  PatternStmt(StmtClass SC, EmptyShell) : Stmt(SC) {}
+
+public:
+  const PatternStmt *getNextPattern() const { return NextPattern; }
+  PatternStmt *getNextPattern() { return NextPattern; }
+  void setNextPattern(PatternStmt *SC) { NextPattern = SC; }
+
+  SourceLocation getPatternLoc() const { return InspectPatternBits.PatternLoc; }
+  void setPatternLoc(SourceLocation L) { InspectPatternBits.PatternLoc = L; }
+  SourceLocation getColonLoc() const { return ColonLoc; }
+  void setColonLoc(SourceLocation L) { ColonLoc = L; }
+
+  inline Stmt *getSubStmt();
+  const Stmt *getSubStmt() const {
+    return const_cast<PatternStmt *>(this)->getSubStmt();
+  }
+
+  SourceLocation getBeginLoc() const { return getPatternLoc(); }
+  inline SourceLocation getEndLoc() const LLVM_READONLY;
+
+  static bool classof(const Stmt *T) {
+    return T->getStmtClass() == WildcardPatternStmtClass ||
+      T->getStmtClass() == IdentifierPatternStmtClass ||
+      T->getStmtClass() == ExpressionPatternStmtClass;
+  }
 };
 
 class WildcardPatternStmt final
-  : public PatternStmt {
+  : public PatternStmt,
+  private llvm::TrailingObjects<WildcardPatternStmt, Stmt *> {
+  friend TrailingObjects;
+
+  // WildcardPatternStmt is followed by several trailing objects.
+  //
+  // * A "Stmt *" for the LHS of the pattern statement. Always present.
+  //
+  // * A "Stmt *" for the substatement of the pattern statement. Always present.
+  enum { LhsOffset = 0, SubStmtOffsetFromLhs = 1 };
+  enum { NumMandatoryStmtPtr = 2 };
+
+  unsigned numTrailingObjects(OverloadToken<Stmt *>) const {
+    return NumMandatoryStmtPtr;
+  }
+
+  unsigned lhsOffset() const { return LhsOffset; }
+  unsigned subStmtOffset() const { return lhsOffset() + SubStmtOffsetFromLhs; }
+
+  WildcardPatternStmt(Expr *lhs, SourceLocation patternLoc, SourceLocation colonLoc)
+    : PatternStmt(WildcardPatternStmtClass, patternLoc, colonLoc) {
+    setLHS(lhs);
+    setSubStmt(nullptr);
+  }
+
+  /// Build an empty wildcard pattern statement.
+  explicit WildcardPatternStmt(EmptyShell Empty)
+    : PatternStmt(WildcardPatternStmtClass, Empty) {
+  }
+
+public:
+  /// Build a wildcard pattern statement.
+  static WildcardPatternStmt *Create(const ASTContext &Ctx, Expr *lhs, 
+                                     SourceLocation patternLoc, SourceLocation colonLoc);
+
+  /// Build an empty wildcard pattern statement.
+  static WildcardPatternStmt *CreateEmpty(const ASTContext &Ctx);
+
+  SourceLocation getIdentifierLoc() const { return getPatternLoc(); }
+  void setIdentifierLoc(SourceLocation L) { setPatternLoc(L); }
+
+  Expr *getLHS() {
+    return reinterpret_cast<Expr *>(getTrailingObjects<Stmt *>()[lhsOffset()]);
+  }
+
+  const Expr *getLHS() const {
+    return reinterpret_cast<Expr *>(getTrailingObjects<Stmt *>()[lhsOffset()]);
+  }
+
+  void setLHS(Expr *Val) {
+    getTrailingObjects<Stmt *>()[lhsOffset()] = reinterpret_cast<Stmt *>(Val);
+  }
+
+  Stmt *getSubStmt() { return getTrailingObjects<Stmt *>()[subStmtOffset()]; }
+  const Stmt *getSubStmt() const {
+    return getTrailingObjects<Stmt *>()[subStmtOffset()];
+  }
+
+  void setSubStmt(Stmt *S) {
+    getTrailingObjects<Stmt *>()[subStmtOffset()] = S;
+  }
+
+  SourceLocation getBeginLoc() const { return getIdentifierLoc(); }
+  SourceLocation getEndLoc() const LLVM_READONLY {
+    // Handle deeply nested wildcard pattern statements with iteration instead of recursion.
+    const PatternStmt *CS = this;
+    while (const auto *CS2 = dyn_cast<PatternStmt>(CS->getSubStmt()))
+      CS = CS2;
+
+    return CS->getSubStmt()->getEndLoc();
+  }
+
+  static bool classof(const Stmt *T) {
+    return T->getStmtClass() == WildcardPatternStmtClass;
+  }
+
+  // Iterators
+  child_range children() {
+    return child_range(getTrailingObjects<Stmt *>(),
+      getTrailingObjects<Stmt *>() +
+      numTrailingObjects(OverloadToken<Stmt *>()));
+  }
+
+  const_child_range children() const {
+    return const_child_range(getTrailingObjects<Stmt *>(),
+      getTrailingObjects<Stmt *>() +
+      numTrailingObjects(OverloadToken<Stmt *>()));
+  }
 };
 
 class IdentifierPatternStmt final
-  : public PatternStmt {
+  : public PatternStmt, 
+  private llvm::TrailingObjects<IdentifierPatternStmt, Stmt *> {
+  friend TrailingObjects;
+
+  // IdentifierPatternStmt is followed by several trailing objects.
+  //
+  // * A "Stmt *" for the LHS of the pattern statement. Always present.
+  //
+  // * A "Stmt *" for the substatement of the pattern statement. Always present.
+  enum { LhsOffset = 0, SubStmtOffsetFromLhs = 1 };
+  enum { NumMandatoryStmtPtr = 2 };
+
+  unsigned numTrailingObjects(OverloadToken<Stmt *>) const {
+    return NumMandatoryStmtPtr;
+  }
+
+  unsigned lhsOffset() const { return LhsOffset; }
+  unsigned subStmtOffset() const { return lhsOffset() + SubStmtOffsetFromLhs; }
+
+  IdentifierPatternStmt(Expr *lhs, SourceLocation patternLoc, SourceLocation colonLoc)
+    : PatternStmt(IdentifierPatternStmtClass, patternLoc, colonLoc) {
+    setLHS(lhs);
+    setSubStmt(nullptr);
+  }
+
+  /// Build an empty identifier pattern statement.
+  explicit IdentifierPatternStmt(EmptyShell Empty)
+    : PatternStmt(IdentifierPatternStmtClass, Empty) {
+  }
+
+public:
+  /// Build a identifier pattern statement.
+  static IdentifierPatternStmt *Create(const ASTContext &Ctx, Expr *lhs, 
+                                       SourceLocation patternLoc, SourceLocation colonLoc);
+
+  /// Build an empty identifier pattern statement.
+  static IdentifierPatternStmt *CreateEmpty(const ASTContext &Ctx);
+
+  SourceLocation getIdentifierLoc() const { return getPatternLoc(); }
+  void setIdentifierLoc(SourceLocation L) { setPatternLoc(L); }
+
+  Expr *getLHS() {
+    return reinterpret_cast<Expr *>(getTrailingObjects<Stmt *>()[lhsOffset()]);
+  }
+
+  const Expr *getLHS() const {
+    return reinterpret_cast<Expr *>(getTrailingObjects<Stmt *>()[lhsOffset()]);
+  }
+
+  void setLHS(Expr *Val) {
+    getTrailingObjects<Stmt *>()[lhsOffset()] = reinterpret_cast<Stmt *>(Val);
+  }
+
+  Stmt *getSubStmt() { return getTrailingObjects<Stmt *>()[subStmtOffset()]; }
+  const Stmt *getSubStmt() const {
+    return getTrailingObjects<Stmt *>()[subStmtOffset()];
+  }
+
+  void setSubStmt(Stmt *S) {
+    getTrailingObjects<Stmt *>()[subStmtOffset()] = S;
+  }
+
+  SourceLocation getBeginLoc() const { return getIdentifierLoc(); }
+  SourceLocation getEndLoc() const LLVM_READONLY {
+    // Handle deeply nested identifier pattern statements with iteration instead of recursion.
+    const PatternStmt *CS = this;
+    while (const auto *CS2 = dyn_cast<PatternStmt>(CS->getSubStmt()))
+      CS = CS2;
+
+    return CS->getSubStmt()->getEndLoc();
+  }
+
+  static bool classof(const Stmt *T) {
+    return T->getStmtClass() == IdentifierPatternStmtClass;
+  }
+
+  // Iterators
+  child_range children() {
+    return child_range(getTrailingObjects<Stmt *>(),
+      getTrailingObjects<Stmt *>() +
+      numTrailingObjects(OverloadToken<Stmt *>()));
+  }
+
+  const_child_range children() const {
+    return const_child_range(getTrailingObjects<Stmt *>(),
+      getTrailingObjects<Stmt *>() +
+      numTrailingObjects(OverloadToken<Stmt *>()));
+  }
 };
 
 class ExpressionPatternStmt final
-  : public PatternStmt {
+  : public PatternStmt,
+  private llvm::TrailingObjects<ExpressionPatternStmt, Stmt *> {
+  friend TrailingObjects;
+
+  // ExpressionPatternStmt is followed by several trailing objects.
+  //
+  // * A "Stmt *" for the LHS of the pattern statement. Always present.
+  //
+  // * A "Stmt *" for the substatement of the pattern statement. Always present.
+  enum { LhsOffset = 0, SubStmtOffsetFromLhs = 1 };
+  enum { NumMandatoryStmtPtr = 2 };
+
+  unsigned numTrailingObjects(OverloadToken<Stmt *>) const {
+    return NumMandatoryStmtPtr;
+  }
+
+  unsigned lhsOffset() const { return LhsOffset; }
+  unsigned subStmtOffset() const { return lhsOffset() + SubStmtOffsetFromLhs; }
+
+  ExpressionPatternStmt(Expr *lhs, SourceLocation patternLoc, SourceLocation colonLoc)
+    : PatternStmt(ExpressionPatternStmtClass, patternLoc, colonLoc) {
+    setLHS(lhs);
+    setSubStmt(nullptr);
+  }
+
+  /// Build an empty expression pattern statement.
+  explicit ExpressionPatternStmt(EmptyShell Empty)
+    : PatternStmt(ExpressionPatternStmtClass, Empty) {
+  }
+
+public:
+  /// Build a expression pattern statement.
+  static ExpressionPatternStmt *Create(const ASTContext &Ctx, Expr *lhs, 
+                                       SourceLocation patternLoc, SourceLocation colonLoc);
+
+  /// Build an empty expression pattern statement.
+  static ExpressionPatternStmt *CreateEmpty(const ASTContext &Ctx);
+
+  SourceLocation getIdentifierLoc() const { return getPatternLoc(); }
+  void setIdentifierLoc(SourceLocation L) { setPatternLoc(L); }
+
+  Expr *getLHS() {
+    return reinterpret_cast<Expr *>(getTrailingObjects<Stmt *>()[lhsOffset()]);
+  }
+
+  const Expr *getLHS() const {
+    return reinterpret_cast<Expr *>(getTrailingObjects<Stmt *>()[lhsOffset()]);
+  }
+
+  void setLHS(Expr *Val) {
+    getTrailingObjects<Stmt *>()[lhsOffset()] = reinterpret_cast<Stmt *>(Val);
+  }
+
+  Stmt *getSubStmt() { return getTrailingObjects<Stmt *>()[subStmtOffset()]; }
+  const Stmt *getSubStmt() const {
+    return getTrailingObjects<Stmt *>()[subStmtOffset()];
+  }
+
+  void setSubStmt(Stmt *S) {
+    getTrailingObjects<Stmt *>()[subStmtOffset()] = S;
+  }
+
+  SourceLocation getBeginLoc() const { return getIdentifierLoc(); }
+  SourceLocation getEndLoc() const LLVM_READONLY {
+    // Handle deeply nested expression pattern statements with iteration instead of recursion.
+    const PatternStmt *CS = this;
+    while (const auto *CS2 = dyn_cast<PatternStmt>(CS->getSubStmt()))
+      CS = CS2;
+
+    return CS->getSubStmt()->getEndLoc();
+  }
+
+  static bool classof(const Stmt *T) {
+    return T->getStmtClass() == ExpressionPatternStmtClass;
+  }
+
+  // Iterators
+  child_range children() {
+    return child_range(getTrailingObjects<Stmt *>(),
+      getTrailingObjects<Stmt *>() +
+      numTrailingObjects(OverloadToken<Stmt *>()));
+  }
+
+  const_child_range children() const {
+    return const_child_range(getTrailingObjects<Stmt *>(),
+      getTrailingObjects<Stmt *>() +
+      numTrailingObjects(OverloadToken<Stmt *>()));
+  }
 };
+
+SourceLocation PatternStmt::getEndLoc() const {
+  if (const auto *WP = dyn_cast<WildcardPatternStmt>(this))
+    return WP->getEndLoc();
+  else if (const auto *IP = dyn_cast<IdentifierPatternStmt>(this))
+    return IP->getEndLoc();
+  else if (const auto *EP = dyn_cast<ExpressionPatternStmt>(this))
+    return EP->getEndLoc();
+
+  llvm_unreachable("PatternStmt is neither a WildcardPatternStmt nor"
+                   "a IdentifierPatternStmt, nor a ExpressionPatternStmt!");
+}
+
+Stmt *PatternStmt::getSubStmt() {
+  if (auto *WP = dyn_cast<WildcardPatternStmt>(this))
+    return WP->getSubStmt();
+  else if (auto *IP = dyn_cast<IdentifierPatternStmt>(this))
+    return IP->getSubStmt();
+  else if (auto *EP = dyn_cast<ExpressionPatternStmt>(this))
+    return EP->getSubStmt();
+
+  llvm_unreachable("PatternStmt is neither a WildcardPatternStmt nor"
+    "a IdentifierPatternStmt, nor a ExpressionPatternStmt!");
+}
 
 /// InspectStmt - This represents an 'inspect' stmt.
 class InspectStmt final : public Stmt,

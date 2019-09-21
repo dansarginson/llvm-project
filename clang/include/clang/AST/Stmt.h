@@ -945,6 +945,18 @@ protected:
     /// The location of the "inspect".
     SourceLocation InspectLoc;
   };
+
+  class InspectPatternBitfields {
+    friend class PatternStmt;
+    friend class IdentifierPatternStmt;
+
+    unsigned : NumStmtBits;
+
+    /// The location of the '__' wildcard, identifier or
+    /// constant expression.
+    SourceLocation PatternLoc;
+  };
+
   union {
     // Same order as in StmtNodes.td.
     // Statements
@@ -1013,6 +1025,8 @@ protected:
 
     // C++ Pattern Matching expressions
     InspectStmtBitfields InspectStmtBits;
+    InspectPatternBitfields InspectPatternBits;
+
     // Obj-C Expressions
     ObjCIndirectCopyRestoreExprBitfields ObjCIndirectCopyRestoreExprBits;
 

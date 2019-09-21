@@ -151,3 +151,48 @@ InspectStmt *InspectStmt::CreateEmpty(const ASTContext &Ctx) {
     alignof(SwitchStmt));
   return new (Mem) InspectStmt(EmptyShell());
 }
+
+WildcardPatternStmt *WildcardPatternStmt::Create(const ASTContext &Ctx, Expr *lhs, 
+                                                 SourceLocation caseLoc, SourceLocation colonLoc) {
+  void *Mem = Ctx.Allocate(
+    totalSizeToAlloc<Stmt *>(NumMandatoryStmtPtr),
+    alignof(WildcardPatternStmt));
+  return new (Mem) WildcardPatternStmt(lhs, caseLoc, colonLoc);
+}
+
+WildcardPatternStmt *WildcardPatternStmt::CreateEmpty(const ASTContext &Ctx) {
+  void *Mem = Ctx.Allocate(
+    totalSizeToAlloc<Stmt *>(NumMandatoryStmtPtr),
+    alignof(WildcardPatternStmt));
+  return new (Mem) WildcardPatternStmt(EmptyShell());
+}
+
+IdentifierPatternStmt *IdentifierPatternStmt::Create(const ASTContext &Ctx, Expr *lhs, 
+                                                     SourceLocation caseLoc, SourceLocation colonLoc) {
+  void *Mem = Ctx.Allocate(
+    totalSizeToAlloc<Stmt *>(NumMandatoryStmtPtr),
+    alignof(IdentifierPatternStmt));
+  return new (Mem) IdentifierPatternStmt(lhs, caseLoc, colonLoc);
+}
+
+IdentifierPatternStmt *IdentifierPatternStmt::CreateEmpty(const ASTContext &Ctx) {
+  void *Mem = Ctx.Allocate(
+    totalSizeToAlloc<Stmt *>(NumMandatoryStmtPtr),
+    alignof(IdentifierPatternStmt));
+  return new (Mem) IdentifierPatternStmt(EmptyShell());
+}
+
+ExpressionPatternStmt *ExpressionPatternStmt::Create(const ASTContext &Ctx, Expr *lhs, 
+                                                     SourceLocation caseLoc, SourceLocation colonLoc) {
+  void *Mem = Ctx.Allocate(
+    totalSizeToAlloc<Stmt *>(NumMandatoryStmtPtr),
+    alignof(ExpressionPatternStmt));
+  return new (Mem) ExpressionPatternStmt(lhs, caseLoc, colonLoc);
+}
+
+ExpressionPatternStmt *ExpressionPatternStmt::CreateEmpty(const ASTContext &Ctx) {
+  void *Mem = Ctx.Allocate(
+    totalSizeToAlloc<Stmt *>(NumMandatoryStmtPtr),
+    alignof(ExpressionPatternStmt));
+  return new (Mem) ExpressionPatternStmt(EmptyShell());
+}
