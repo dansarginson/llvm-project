@@ -779,13 +779,33 @@ StmtResult Sema::ActOnStartOfInspectStmt(SourceLocation InspectLoc,
   Expr *CondExpr = Cond.get().second;
   assert((Cond.isInvalid() || CondExpr) && "inspect with no condition");
 
-  return StmtError();
+  auto *IS = InspectStmt::Create(Context, CondExpr);
+  getCurFunction()->InspectStack.push_back(
+      FunctionScopeInfo::InspectInfo(IS, false));
+  return IS;
 }
 
 StmtResult
 Sema::ActOnFinishInspectStmt(SourceLocation InspectLoc, Stmt *Inspect,
                              Stmt *BodyStmt) {
-  return StmtError();
+
+  InspectStmt *IS = cast<InspectStmt>(Inspect);
+  assert(IS == getCurFunction()->InspectStack.back().getPointer() &&
+    "inspect stack missing push/pop!");
+
+  getCurFunction()->InspectStack.pop_back();
+
+  if (!BodyStmt) return StmtError();
+  IS->setBody(BodyStmt, InspectLoc);
+
+  Expr *CondExpr = IS->getCond();
+  if (!CondExpr) return StmtError();
+
+  if (BodyStmt)
+    DiagnoseEmptyStmtBody(CondExpr->getEndLoc(), BodyStmt,
+      diag::warn_empty_switch_body);
+
+  return IS;
 }
 
 static void AdjustAPSInt(llvm::APSInt &Val, unsigned BitWidth, bool IsSigned) {
