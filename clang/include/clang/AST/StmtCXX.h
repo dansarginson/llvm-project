@@ -861,39 +861,60 @@ class InspectStmt final : public Stmt,
   /// Points to a linked list of patterns
   PatternStmt *FirstPattern;
 
-  // InspectStmt is followed by two trailing objects.
+  // InspectStmt is followed by several trailing objects,
+  // some of which optional. Note that it would be more convenient to
+  // put the optional trailing objects at the end but this would change
+  // the order in children().
   // The trailing objects are in order:
+  //
+  // * A "Stmt *" for the init statement.
+  //    Present if and only if hasInitStorage().
+  //
+  // * A "Stmt *" for the condition variable.
+  //    Present if and only if hasVarStorage(). This is in fact a "DeclStmt *".
   //
   // * A "Stmt *" for the condition.
   //    Always present. This is in fact an "Expr *".
   //
   // * A "Stmt *" for the body.
   //    Always present.
-  enum { CondOffset = 0, BodyOffsetFromCond = 1 };
+  enum { InitOffset = 0, BodyOffsetFromCond = 1 };
   enum { NumMandatoryStmtPtr = 2 };
 
   unsigned numTrailingObjects(OverloadToken<Stmt *>) const {
-    return NumMandatoryStmtPtr;
+    return NumMandatoryStmtPtr + hasInitStorage() + hasVarStorage();
   }
 
+  unsigned initOffset() const { return InitOffset; }
+  unsigned varOffset() const { return InitOffset + hasInitStorage(); }
   unsigned condOffset() const {
-    return CondOffset;
+    return InitOffset + hasInitStorage() + hasVarStorage();
   }
   unsigned bodyOffset() const { return condOffset() + BodyOffsetFromCond; }
 
   /// Build an inspect statement.
-  InspectStmt(const ASTContext &Ctx, Expr *Cond);
+  InspectStmt(const ASTContext &Ctx, Stmt *Init, VarDecl *Var,
+              Expr *Cond);
 
   /// Build an empty inspect statement.
-  explicit InspectStmt(EmptyShell Empty);
+  explicit InspectStmt(EmptyShell Empty, bool HasInit,
+                                  bool HasVar);
 
 public:
   /// Create an inspect statement.
-  static InspectStmt *Create(const ASTContext &Ctx, Expr *Cond);
+  static InspectStmt *Create(const ASTContext &Ctx, Stmt *Init, VarDecl *Var,
+                             Expr *Cond);
 
   /// Create an empty inspect statement optionally with storage for
   /// an init expression and a condition variable.
-  static InspectStmt *CreateEmpty(const ASTContext &Ctx);
+  static InspectStmt *CreateEmpty(const ASTContext &Ctx, bool HasInit,
+                                  bool HasVar);
+
+  /// True if this SwitchStmt has storage for an init statement.
+  bool hasInitStorage() const { return InspectStmtBits.HasInit; }
+
+  /// True if this SwitchStmt has storage for a condition variable.
+  bool hasVarStorage() const { return InspectStmtBits.HasVar; }
 
   Expr *getCond() {
     return reinterpret_cast<Expr *>(getTrailingObjects<Stmt *>()[condOffset()]);
@@ -914,6 +935,54 @@ public:
 
   void setBody(Stmt *Body) {
     getTrailingObjects<Stmt *>()[bodyOffset()] = Body;
+  }
+
+  Stmt *getInit() {
+    return hasInitStorage() ? getTrailingObjects<Stmt *>()[initOffset()]
+      : nullptr;
+  }
+
+  const Stmt *getInit() const {
+    return hasInitStorage() ? getTrailingObjects<Stmt *>()[initOffset()]
+      : nullptr;
+  }
+
+  void setInit(Stmt *Init) {
+    assert(hasInitStorage() &&
+      "This inspect statement has no storage for an init statement!");
+    getTrailingObjects<Stmt *>()[initOffset()] = Init;
+  }
+
+  /// Retrieve the variable declared in this "inspect" statement, if any.
+  ///
+  /// In the following example, "x" is the condition variable.
+  /// \code
+  /// switch (int x = foo()) {
+  ///   case 0: break;
+  ///   // ...
+  /// }
+/// \endcode
+  VarDecl *getConditionVariable();
+  const VarDecl *getConditionVariable() const {
+    return const_cast<InspectStmt *>(this)->getConditionVariable();
+  }
+
+  /// Set the condition variable in this switch statement.
+  /// The switch statement must have storage for it.
+  void setConditionVariable(const ASTContext &Ctx, VarDecl *VD);
+
+  /// If this SwitchStmt has a condition variable, return the faux DeclStmt
+  /// associated with the creation of that condition variable.
+  DeclStmt *getConditionVariableDeclStmt() {
+    return hasVarStorage() ? static_cast<DeclStmt *>(
+      getTrailingObjects<Stmt *>()[varOffset()])
+      : nullptr;
+  }
+
+  const DeclStmt *getConditionVariableDeclStmt() const {
+    return hasVarStorage() ? static_cast<DeclStmt *>(
+      getTrailingObjects<Stmt *>()[varOffset()])
+      : nullptr;
   }
 
   PatternStmt *getPatternList() { return FirstPattern; }

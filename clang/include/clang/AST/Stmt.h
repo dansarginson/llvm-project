@@ -942,6 +942,12 @@ protected:
 
     unsigned : NumStmtBits;
 
+    /// True if the InspectStmt has storage for an init statement.
+    unsigned HasInit : 1;
+
+    /// True if the InspectStmt has storage for a condition variable.
+    unsigned HasVar : 1;
+
     /// The location of the "inspect".
     SourceLocation InspectLoc;
   };

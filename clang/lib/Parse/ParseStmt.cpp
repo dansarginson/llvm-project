@@ -1565,15 +1565,16 @@ StmtResult Parser::ParseInspectStatement(SourceLocation *TrailingElseLoc) {
   ParseScope InspectScope(this, Scope::InspectScope);
 
   // Parse the condition.
+  StmtResult Init;
   Sema::ConditionResult Cond;
-  if (ParseParenExprOrCondition(nullptr, Cond, InspectLoc, Sema::ConditionKind::Inspect)) {
+  if (ParseParenExprOrCondition(&Init, Cond, InspectLoc, Sema::ConditionKind::Inspect)) {
     return StmtError();
   }
 
   // inspect (...) { }
   //               ^
 
-  StmtResult Inspect = Actions.ActOnStartOfInspectStmt(InspectLoc, Cond);
+  StmtResult Inspect = Actions.ActOnStartOfInspectStmt(InspectLoc, Init.get(), Cond);
 
   if (Inspect.isInvalid()) {
     // Skip the inspect body.

@@ -774,12 +774,12 @@ StmtResult Sema::ActOnStartOfSwitchStmt(SourceLocation SwitchLoc,
   return SS;
 }
 
-StmtResult Sema::ActOnStartOfInspectStmt(SourceLocation InspectLoc,
+StmtResult Sema::ActOnStartOfInspectStmt(SourceLocation InspectLoc, Stmt *InitStmt,
                                          ConditionResult Cond) {
   Expr *CondExpr = Cond.get().second;
   assert((Cond.isInvalid() || CondExpr) && "inspect with no condition");
 
-  auto *IS = InspectStmt::Create(Context, CondExpr);
+  auto *IS = InspectStmt::Create(Context, InitStmt, Cond.get().first, CondExpr);
   getCurFunction()->InspectStack.push_back(
       FunctionScopeInfo::InspectInfo(IS, false));
   return IS;

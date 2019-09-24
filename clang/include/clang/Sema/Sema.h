@@ -3985,6 +3985,7 @@ public:
   StmtResult ActOnFinishSwitchStmt(SourceLocation SwitchLoc,
                                            Stmt *Switch, Stmt *Body);
   StmtResult ActOnStartOfInspectStmt(SourceLocation InspectLoc,
+                                     Stmt *InitStmt,
                                      ConditionResult Cond);
   StmtResult ActOnFinishInspectStmt(SourceLocation InspectLoc,
                                     Stmt *Inspect, Stmt *Body);

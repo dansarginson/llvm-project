@@ -126,30 +126,66 @@ CoroutineBodyStmt::CoroutineBodyStmt(CoroutineBodyStmt::CtorArgs const &Args)
             const_cast<Stmt **>(getParamMoves().data()));
 }
 
-InspectStmt::InspectStmt(const ASTContext &Ctx, Expr *Cond)
+InspectStmt::InspectStmt(const ASTContext &Ctx, Stmt *Init, 
+                         VarDecl *Var, Expr *Cond)
   : Stmt(InspectStmtClass), FirstPattern(nullptr) {
+
+  bool HasInit = Init != nullptr;
+  bool HasVar = Var != nullptr;
+  InspectStmtBits.HasInit = HasInit;
+  InspectStmtBits.HasVar = HasVar;
 
   setCond(Cond);
   setBody(nullptr);
+  if (HasInit)
+    setInit(Init);
+  if (HasVar)
+    setConditionVariable(Ctx, Var);
+
   setInspectLoc(SourceLocation{});
 }
 
-InspectStmt::InspectStmt(EmptyShell Empty)
+InspectStmt::InspectStmt(EmptyShell Empty, bool HasInit, bool HasVar)
   : Stmt(InspectStmtClass, Empty) {
+
+  InspectStmtBits.HasInit = HasInit;
+  InspectStmtBits.HasVar = HasVar;
 }
 
-InspectStmt *InspectStmt::Create(const ASTContext &Ctx, Expr *Cond) {
+InspectStmt *InspectStmt::Create(const ASTContext &Ctx, Stmt *Init,
+                                 VarDecl *Var, Expr *Cond) {
   void *Mem = Ctx.Allocate(
     totalSizeToAlloc<Stmt *>(NumMandatoryStmtPtr),
     alignof(InspectStmt));
-  return new (Mem) InspectStmt(Ctx, Cond);
+  return new (Mem) InspectStmt(Ctx, Init, Var, Cond);
 }
 
-InspectStmt *InspectStmt::CreateEmpty(const ASTContext &Ctx) {
+InspectStmt *InspectStmt::CreateEmpty(const ASTContext &Ctx, bool HasInit, bool HasVar) {
   void *Mem = Ctx.Allocate(
     totalSizeToAlloc<Stmt *>(NumMandatoryStmtPtr),
     alignof(SwitchStmt));
-  return new (Mem) InspectStmt(EmptyShell());
+  return new (Mem) InspectStmt(EmptyShell(), HasInit, HasVar);
+}
+
+VarDecl *InspectStmt::getConditionVariable() {
+  auto *DS = getConditionVariableDeclStmt();
+  if (!DS)
+    return nullptr;
+  return cast<VarDecl>(DS->getSingleDecl());
+}
+
+void InspectStmt::setConditionVariable(const ASTContext &Ctx, VarDecl *V) {
+  assert(hasVarStorage() &&
+    "This inspect statement has no storage for a condition variable!");
+
+  if (!V) {
+    getTrailingObjects<Stmt *>()[varOffset()] = nullptr;
+    return;
+  }
+
+  SourceRange VarRange = V->getSourceRange();
+  getTrailingObjects<Stmt *>()[varOffset()] = new (Ctx)
+    DeclStmt(DeclGroupRef(V), VarRange.getBegin(), VarRange.getEnd());
 }
 
 WildcardPatternStmt *WildcardPatternStmt::Create(const ASTContext &Ctx, Expr *lhs, 
