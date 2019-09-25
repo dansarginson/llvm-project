@@ -703,8 +703,7 @@ StmtResult Parser::ParseWildcardPattern(ParsedStmtContext StmtCtx) {
   IdentifierInfo *II = Tok.getIdentifierInfo();
   assert((!II->getName().compare("__")) && "Not a wildcard pattern!");
 
-  Token WildcardTok = Tok; // Save the whole token
-  ConsumeToken();          // eat the identifier
+  SourceLocation WilcardLoc = ConsumeToken(); // eat the identifier
 
     // '__' ':' statement
     //      ^
@@ -722,7 +721,7 @@ StmtResult Parser::ParseWildcardPattern(ParsedStmtContext StmtCtx) {
   if (SubStmt.isInvalid())
     SubStmt = Actions.ActOnNullStmt(ColonLoc);
 
-  return Actions.ActOnWildcardPattern(WildcardTok, ColonLoc, SubStmt.get());
+  return Actions.ActOnWildcardPattern(WilcardLoc, ColonLoc, SubStmt.get());
 }
 
 StmtResult Parser::ParseIdentifierPattern(ParsedStmtContext StmtCtx) {
@@ -731,7 +730,7 @@ StmtResult Parser::ParseIdentifierPattern(ParsedStmtContext StmtCtx) {
   // identifier ':' statement
   // ^
   Token IdentTok = Tok; // Save the whole token.
-  ConsumeToken();       // eat the identifier.
+  SourceLocation IdentifierLocation = ConsumeToken(); // eat the identifier.
 
   // identifier ':' statement
   //            ^
@@ -747,10 +746,12 @@ StmtResult Parser::ParseIdentifierPattern(ParsedStmtContext StmtCtx) {
   if (SubStmt.isInvalid())
     SubStmt = Actions.ActOnNullStmt(ColonLoc);
 
-  return Actions.ActOnIdentifierPattern(IdentTok, ColonLoc, SubStmt.get());
+  return Actions.ActOnIdentifierPattern(IdentTok, IdentifierLocation, ColonLoc, SubStmt.get());
 }
 
 StmtResult Parser::ParseExpressionPattern(ParsedStmtContext StmtCtx) {
+
+  SourceLocation ExpressionLoc = Tok.getLocation();
 
   // constant-expression ':' statement
   // ^
@@ -773,7 +774,7 @@ StmtResult Parser::ParseExpressionPattern(ParsedStmtContext StmtCtx) {
   if (SubStmt.isInvalid())
     SubStmt = Actions.ActOnNullStmt(ColonLoc);
 
-  return Actions.ActOnExpressionPattern(EX.get(), ColonLoc, SubStmt.get());
+  return Actions.ActOnExpressionPattern(EX.get(), ExpressionLoc, ColonLoc, SubStmt.get());
 }
 
 /// ParseCaseStatement

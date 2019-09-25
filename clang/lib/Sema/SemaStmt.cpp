@@ -514,25 +514,43 @@ Sema::ActOnDefaultStmt(SourceLocation DefaultLoc, SourceLocation ColonLoc,
   return DS;
 }
 
-StmtResult Sema::ActOnWildcardPattern(Token IdentTok,
+StmtResult Sema::ActOnWildcardPattern(SourceLocation WildcardLoc,
                                       SourceLocation ColonLoc,
                                       Stmt *SubStmt) {
 
-  return StmtError();
+  if (getCurFunction()->InspectStack.empty()) {
+    return StmtError();
+  }
+
+  WildcardPatternStmt *WPS = new (Context) WildcardPatternStmt(WildcardLoc, ColonLoc, SubStmt);
+  getCurFunction()->InspectStack.back().getPointer()->addPattern(WPS);
+  return WPS;
 }
 
-StmtResult Sema::ActOnIdentifierPattern(Token IdentTok,
+StmtResult Sema::ActOnIdentifierPattern(Token IdentifierTok, 
+                                        SourceLocation ConditionLoc,
                                         SourceLocation ColonLoc,
                                         Stmt *SubStmt) {
+  if (getCurFunction()->InspectStack.empty()) {
+    return StmtError();
+  }
 
-  return StmtError();
+  IdentifierPatternStmt *IPS = new (Context) IdentifierPatternStmt(IdentifierTok, ConditionLoc, ColonLoc, SubStmt);
+  getCurFunction()->InspectStack.back().getPointer()->addPattern(IPS);
+  return IPS;
 }
 
-StmtResult Sema::ActOnExpressionPattern(Expr *ConstExpr,
+StmtResult Sema::ActOnExpressionPattern(ExprResult Condition,
+                                        SourceLocation ConditionLoc,
                                         SourceLocation ColonLoc,
                                         Stmt *SubStmt) {
+  if (getCurFunction()->InspectStack.empty()) {
+    return StmtError();
+  }
 
-  return StmtError();
+  ExpressionPatternStmt *EPS = new (Context) ExpressionPatternStmt(Condition.get(), ConditionLoc, ColonLoc, SubStmt);
+  getCurFunction()->InspectStack.back().getPointer()->addPattern(EPS);
+  return EPS;
 }
 
 StmtResult

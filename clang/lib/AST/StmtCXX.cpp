@@ -188,12 +188,12 @@ void InspectStmt::setConditionVariable(const ASTContext &Ctx, VarDecl *V) {
     DeclStmt(DeclGroupRef(V), VarRange.getBegin(), VarRange.getEnd());
 }
 
-WildcardPatternStmt *WildcardPatternStmt::Create(const ASTContext &Ctx, Expr *lhs, 
-                                                 SourceLocation caseLoc, SourceLocation colonLoc) {
+WildcardPatternStmt *WildcardPatternStmt::Create(const ASTContext &Ctx,
+                                                 SourceLocation wildcardLoc, SourceLocation colonLoc) {
   void *Mem = Ctx.Allocate(
     totalSizeToAlloc<Stmt *>(NumMandatoryStmtPtr),
     alignof(WildcardPatternStmt));
-  return new (Mem) WildcardPatternStmt(lhs, caseLoc, colonLoc);
+  return new (Mem) WildcardPatternStmt(wildcardLoc, colonLoc, nullptr);
 }
 
 WildcardPatternStmt *WildcardPatternStmt::CreateEmpty(const ASTContext &Ctx) {
@@ -203,12 +203,12 @@ WildcardPatternStmt *WildcardPatternStmt::CreateEmpty(const ASTContext &Ctx) {
   return new (Mem) WildcardPatternStmt(EmptyShell());
 }
 
-IdentifierPatternStmt *IdentifierPatternStmt::Create(const ASTContext &Ctx, Expr *lhs, 
+IdentifierPatternStmt *IdentifierPatternStmt::Create(const ASTContext &Ctx, Token identifierTok, 
                                                      SourceLocation caseLoc, SourceLocation colonLoc) {
   void *Mem = Ctx.Allocate(
     totalSizeToAlloc<Stmt *>(NumMandatoryStmtPtr),
     alignof(IdentifierPatternStmt));
-  return new (Mem) IdentifierPatternStmt(lhs, caseLoc, colonLoc);
+  return new (Mem) IdentifierPatternStmt(identifierTok, caseLoc, colonLoc, nullptr);
 }
 
 IdentifierPatternStmt *IdentifierPatternStmt::CreateEmpty(const ASTContext &Ctx) {
@@ -223,7 +223,7 @@ ExpressionPatternStmt *ExpressionPatternStmt::Create(const ASTContext &Ctx, Expr
   void *Mem = Ctx.Allocate(
     totalSizeToAlloc<Stmt *>(NumMandatoryStmtPtr),
     alignof(ExpressionPatternStmt));
-  return new (Mem) ExpressionPatternStmt(lhs, caseLoc, colonLoc);
+  return new (Mem) ExpressionPatternStmt(lhs, caseLoc, colonLoc, nullptr);
 }
 
 ExpressionPatternStmt *ExpressionPatternStmt::CreateEmpty(const ASTContext &Ctx) {
