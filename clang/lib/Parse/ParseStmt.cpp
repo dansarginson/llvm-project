@@ -462,6 +462,11 @@ StmtResult Parser::ParseExprStatement(ParsedStmtContext StmtCtx) {
     return ParseCaseStatement(StmtCtx, /*MissingCase=*/true, Expr);
   }
 
+  if (Tok.is(tok::colon) && getCurScope()->isInspectScope()) {
+    // Recover parsing as an expression pattern.
+    return ParseExpressionPattern(StmtCtx, Expr.get());
+  }
+
   // Otherwise, eat the semicolon.
   ExpectAndConsumeSemi(diag::err_expected_semi_after_expr);
   return handleExprStmt(Expr, StmtCtx);
@@ -677,21 +682,20 @@ StmtResult Parser::ParseLabeledStatement(ParsedAttributesWithRange &attrs,
 ///
 StmtResult Parser::ParsePatternStatement(ParsedAttributesWithRange &attrs,
                                          ParsedStmtContext StmtCtx) {
-  if (Tok.is(tok::identifier)) {
-
-    // yuck, is there a better way to tell '__'
-    // from other valid identifiers in this context?
-    IdentifierInfo *II = Tok.getIdentifierInfo();
-    if (!II->getName().compare("__")) {
-      return ParseWildcardPattern(StmtCtx);
-    }
-
-    return ParseIdentifierPattern(StmtCtx);
+  // we parse expression patterns in ParseExprStatement,
+  // where they get distinguished from case statements
+  if (!Tok.is(tok::identifier)) {
+    return StmtError();
   }
-  
-  // not an identifier? Let's try to parse it
-  // as an expression pattern.
-  return ParseExpressionPattern(StmtCtx);
+
+  // yuck, is there a better way to tell '__'
+  // from other valid identifiers in this context?
+  IdentifierInfo* II = Tok.getIdentifierInfo();
+  if (!II->getName().compare("__")) {
+    return ParseWildcardPattern(StmtCtx);
+  }
+
+  return ParseIdentifierPattern(StmtCtx);
 }
 
 StmtResult Parser::ParseWildcardPattern(ParsedStmtContext StmtCtx) {
@@ -749,16 +753,10 @@ StmtResult Parser::ParseIdentifierPattern(ParsedStmtContext StmtCtx) {
   return Actions.ActOnIdentifierPattern(IdentTok, IdentifierLocation, ColonLoc, SubStmt.get());
 }
 
-StmtResult Parser::ParseExpressionPattern(ParsedStmtContext StmtCtx) {
+StmtResult Parser::ParseExpressionPattern(ParsedStmtContext StmtCtx, Expr* Condition) {
+
 
   SourceLocation ExpressionLoc = Tok.getLocation();
-
-  // constant-expression ':' statement
-  // ^
-  ExprResult EX = ParseConstantExpression();
-  if (EX.isInvalid()) {
-    return StmtError(Diag(Tok, diag::err_expected) << "constant expression");
-  }
 
   // constant-expression ':' statement
   //                     ^
@@ -774,7 +772,7 @@ StmtResult Parser::ParseExpressionPattern(ParsedStmtContext StmtCtx) {
   if (SubStmt.isInvalid())
     SubStmt = Actions.ActOnNullStmt(ColonLoc);
 
-  return Actions.ActOnExpressionPattern(EX.get(), ExpressionLoc, ColonLoc, SubStmt.get());
+  return Actions.ActOnExpressionPattern(Condition, ExpressionLoc, ColonLoc, SubStmt.get());
 }
 
 /// ParseCaseStatement
