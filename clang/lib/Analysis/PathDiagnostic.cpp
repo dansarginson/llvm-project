@@ -778,6 +778,7 @@ PathDiagnosticRange
         case Stmt::ChooseExprClass:
         case Stmt::IndirectGotoStmtClass:
         case Stmt::SwitchStmtClass:
+        case Stmt::InspectStmtClass:
         case Stmt::BinaryConditionalOperatorClass:
         case Stmt::ConditionalOperatorClass:
         case Stmt::ObjCForCollectionStmtClass: {

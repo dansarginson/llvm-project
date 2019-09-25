@@ -3650,6 +3650,9 @@ ExprResult Sema::CheckConditionVariable(VarDecl *ConditionVar,
 
   case ConditionKind::Switch:
     return CheckSwitchCondition(StmtLoc, Condition.get());
+
+  case ConditionKind::Inspect:
+	  return CheckInspectCondition(StmtLoc, Condition.get());
   }
 
   llvm_unreachable("unexpected condition kind");

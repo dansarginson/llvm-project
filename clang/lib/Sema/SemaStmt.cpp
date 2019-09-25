@@ -826,6 +826,10 @@ Sema::ActOnFinishInspectStmt(SourceLocation InspectLoc, Stmt *Inspect,
   return IS;
 }
 
+ExprResult Sema::CheckInspectCondition(SourceLocation InspectLoc, Expr* Cond) {
+	return ExprError();
+}
+
 static void AdjustAPSInt(llvm::APSInt &Val, unsigned BitWidth, bool IsSigned) {
   Val = Val.extOrTrunc(BitWidth);
   Val.setIsSigned(IsSigned);

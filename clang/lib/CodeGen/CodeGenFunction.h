@@ -2891,6 +2891,12 @@ public:
   void EmitDefaultStmt(const DefaultStmt &S);
   void EmitCaseStmt(const CaseStmt &S);
   void EmitCaseStmtRange(const CaseStmt &S);
+
+  void EmitInspectStmt(const InspectStmt &S);
+  void EmitWildcardPatternStmt(const WildcardPatternStmt &S);
+  void EmitIdentifierPatternStmt(const IdentifierPatternStmt &S);
+  void EmitExpressionStmt(const ExpressionPatternStmt &S);
+
   void EmitAsmStmt(const AsmStmt &S);
 
   void EmitObjCForCollectionStmt(const ObjCForCollectionStmt &S);
