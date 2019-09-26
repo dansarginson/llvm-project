@@ -293,15 +293,33 @@ void StmtPrinter::VisitSwitchStmt(SwitchStmt *Node) {
 }
 
 void StmtPrinter::VisitInspectStmt(InspectStmt *Node) {
+  Indent() << "inspect (";
+  if (Node->getInit())
+    PrintInitStmt(Node->getInit(), 8);
+  if (const DeclStmt* DS = Node->getConditionVariableDeclStmt())
+    PrintRawDeclStmt(DS);
+  else
+    PrintExpr(Node->getCond());
+  OS << ")";
+  PrintControlledStmt(Node->getBody());
 }
 
 void StmtPrinter::VisitWildcardPatternStmt(WildcardPatternStmt *Node) {
+  Indent() << "__ :" << NL;
+  PrintStmt(Node->getSubStmt(), 0);
 }
 
 void StmtPrinter::VisitIdentifierPatternStmt(IdentifierPatternStmt *Node) {
+  Indent() << Node->getIdentifierToken().getIdentifierInfo()->getName();
+  OS << " :" << NL;
+  PrintStmt(Node->getSubStmt(), 0);
 }
 
 void StmtPrinter::VisitExpressionPatternStmt(ExpressionPatternStmt *Node) {
+  Indent();
+  PrintExpr(Node->getLHS());
+  OS << " :" << NL;
+  PrintStmt(Node->getSubStmt(), 0);
 }
 
 void StmtPrinter::VisitWhileStmt(WhileStmt *Node) {

@@ -270,15 +270,20 @@ void StmtProfiler::VisitSwitchStmt(const SwitchStmt *S) {
 }
 
 void StmtProfiler::VisitInspectStmt(const InspectStmt *S) {
+  VisitStmt(S);
+  VisitDecl(S->getConditionVariable());
 }
 
 void StmtProfiler::VisitWildcardPatternStmt(const WildcardPatternStmt *S) {
+  VisitStmt(S);
 }
 
 void StmtProfiler::VisitIdentifierPatternStmt(const IdentifierPatternStmt *S) {
+  VisitStmt(S);
 }
 
 void StmtProfiler::VisitExpressionPatternStmt(const ExpressionPatternStmt *S) {
+  VisitStmt(S);
 }
 
 void StmtProfiler::VisitWhileStmt(const WhileStmt *S) {
