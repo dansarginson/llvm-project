@@ -182,15 +182,53 @@ void ASTStmtWriter::VisitSwitchStmt(SwitchStmt *S) {
 }
 
 void ASTStmtWriter::VisitInspectStmt(InspectStmt *S) {
+  VisitStmt(S);
+
+  bool HasInit = S->getInit() != nullptr;
+  bool HasVar = S->getConditionVariableDeclStmt() != nullptr;
+  Record.push_back(HasInit);
+  Record.push_back(HasVar);
+
+  Record.AddStmt(S->getCond());
+  Record.AddStmt(S->getBody());
+  if (HasInit)
+    Record.AddStmt(S->getInit());
+  if (HasVar)
+    Record.AddDeclRef(S->getConditionVariable());
+
+  Record.AddSourceLocation(S->getInspectLoc());
+
+  for (PatternStmt* PS = S->getPatternList(); PS;
+    PS = PS->getNextPattern())
+    Record.push_back(Writer.RecordInspectPatternID(PS));
+  Code = serialization::STMT_SWITCH;
+}
+
+void ASTStmtWriter::VisitPatternStmt(PatternStmt* S) {
+  VisitStmt(S);
+  Record.push_back(Writer.getInspectPatternID(S));
+  Record.AddSourceLocation(S->getPatternLoc());
+  Record.AddSourceLocation(S->getColonLoc());
 }
 
 void ASTStmtWriter::VisitWildcardPatternStmt(WildcardPatternStmt *S) {
+  VisitPatternStmt(S);
+  Record.AddStmt(S->getSubStmt());
+  Code = serialization::STMT_WILDCARDPATTERN;
 }
 
 void ASTStmtWriter::VisitIdentifierPatternStmt(IdentifierPatternStmt *S) {
+  VisitPatternStmt(S);
+  // TODO: need to serialize the identifier somehow
+  Record.AddStmt(S->getSubStmt());
+  Code = serialization::STMT_IDENTIFIERPATTERN;
 }
 
 void ASTStmtWriter::VisitExpressionPatternStmt(ExpressionPatternStmt *S) {
+  VisitPatternStmt(S);
+  Record.AddStmt(S->getLHS());
+  Record.AddStmt(S->getSubStmt());
+  Code = serialization::STMT_EXPRESSIONPATTERN;
 }
 
 void ASTStmtWriter::VisitWhileStmt(WhileStmt *S) {
@@ -2355,6 +2393,24 @@ unsigned ASTWriter::getSwitchCaseID(SwitchCase *S) {
 
 void ASTWriter::ClearSwitchCaseIDs() {
   SwitchCaseIDs.clear();
+}
+
+unsigned ASTWriter::RecordInspectPatternID(PatternStmt* S) {
+  assert(InspectPatternIDs.find(S) == InspectPatternIDs.end() &&
+    "PatternStmt recorded twice");
+  unsigned NextID = InspectPatternIDs.size();
+  InspectPatternIDs[S] = NextID;
+  return NextID;
+}
+
+unsigned ASTWriter::getInspectPatternID(PatternStmt* S) {
+  assert(InspectPatternIDs.find(S) != InspectPatternIDs.end() &&
+    "PatternStmt hasn't been seen yet");
+  return InspectPatternIDs[S];
+}
+
+void ASTWriter::ClearInspectPatternIDs() {
+  InspectPatternIDs.clear();
 }
 
 /// Write the given substatement or subexpression to the

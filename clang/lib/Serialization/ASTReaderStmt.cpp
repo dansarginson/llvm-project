@@ -269,15 +269,54 @@ void ASTStmtReader::VisitSwitchStmt(SwitchStmt *S) {
 }
 
 void ASTStmtReader::VisitInspectStmt(InspectStmt *S) {
+  VisitStmt(S);
+
+  bool HasInit = Record.readInt();
+  bool HasVar = Record.readInt();
+
+  S->setCond(Record.readSubExpr());
+  S->setBody(Record.readSubStmt());
+  if (HasInit)
+    S->setInit(Record.readSubStmt());
+  if (HasVar)
+    S->setConditionVariable(Record.getContext(), ReadDeclAs<VarDecl>());
+
+  S->setInspectLoc(ReadSourceLocation());
+
+  PatternStmt* PrevSC = nullptr;
+  for (auto E = Record.size(); Record.getIdx() != E; ) {
+    PatternStmt* SC = Record.getInspectPatternWithID(Record.readInt());
+    if (PrevSC)
+      PrevSC->setNextPattern(SC);
+    else
+      S->setPatternList(SC);
+
+    PrevSC = SC;
+  }
+}
+
+void ASTStmtReader::VisitPatternStmt(PatternStmt* S) {
+  VisitStmt(S);
+  Record.recordInspectPatternID(S, Record.readInt());
+  S->setPatternLoc(ReadSourceLocation());
+  S->setColonLoc(ReadSourceLocation());
 }
 
 void ASTStmtReader::VisitWildcardPatternStmt(WildcardPatternStmt *S) {
+  VisitPatternStmt(S);
+  S->setSubStmt(Record.readSubStmt());  
 }
 
 void ASTStmtReader::VisitIdentifierPatternStmt(IdentifierPatternStmt *S) {
+  VisitPatternStmt(S);
+  // TODO: need to serialize the identifier
+  S->setSubStmt(Record.readSubStmt());
 }
 
 void ASTStmtReader::VisitExpressionPatternStmt(ExpressionPatternStmt *S) {
+  VisitPatternStmt(S);
+  S->setLHS(cast<clang::Expr>(Record.readSubStmt()));
+  S->setSubStmt(Record.readSubStmt());
 }
 
 void ASTStmtReader::VisitWhileStmt(WhileStmt *S) {
@@ -2509,6 +2548,28 @@ Stmt *ASTReader::ReadStmtFromStream(ModuleFile &F) {
           Context,
           /* HasInit=*/Record[ASTStmtReader::NumStmtFields],
           /* HasVar=*/Record[ASTStmtReader::NumStmtFields + 1]);
+      break;
+
+    case STMT_INSPECT:
+      S = InspectStmt::CreateEmpty(
+        Context,
+        /* HasInit=*/Record[ASTStmtReader::NumStmtFields],
+        /* HasVar=*/Record[ASTStmtReader::NumStmtFields + 1]);
+      break;
+
+    case STMT_WILDCARDPATTERN:
+      S = WildcardPatternStmt::CreateEmpty(
+        Context);
+      break;
+
+    case STMT_IDENTIFIERPATTERN:
+      S = IdentifierPatternStmt::CreateEmpty(
+        Context);
+      break;
+
+    case STMT_EXPRESSIONPATTERN:
+      S = ExpressionPatternStmt::CreateEmpty(
+        Context);
       break;
 
     case STMT_WHILE:

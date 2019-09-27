@@ -949,6 +949,16 @@ private:
 
   SwitchCaseMapTy *CurrSwitchCaseStmts;
 
+  using InspectPatternMapTy = llvm::DenseMap<unsigned, PatternStmt*>;
+
+  /// Mapping from inspect pattern IDs in the chain to PatternStmt statements
+  ///
+  /// Statements usually don't have IDs, but inspect patterns need them, so that the
+  /// inspect statement can refer to them.
+  InspectPatternMapTy InspectPatternStmts;
+
+  InspectPatternMapTy* CurrInspectPatternStmts;
+
   /// The number of source location entries de-serialized from
   /// the PCH file.
   unsigned NumSLocEntriesRead = 0;
@@ -2340,6 +2350,12 @@ public:
 
   void ClearSwitchCaseIDs();
 
+  void RecordInspectPatternID(PatternStmt* SC, unsigned ID);
+
+  PatternStmt* getInspectPatternWithID(unsigned ID);
+
+  void ClearInspectPatternIDs();
+
   /// Cursors for comments blocks.
   SmallVector<std::pair<llvm::BitstreamCursor,
                         serialization::ModuleFile *>, 8> CommentsCursors;
@@ -2671,6 +2687,14 @@ public:
   /// Retrieve the switch-case statement with the given ID.
   SwitchCase *getSwitchCaseWithID(unsigned ID) {
     return Reader->getSwitchCaseWithID(ID);
+  }
+
+  void recordInspectPatternID(PatternStmt* SC, unsigned ID) {
+    Reader->RecordInspectPatternID(SC, ID);
+  }
+
+  PatternStmt* getInspectPatternWithID(unsigned ID) {
+    return Reader->getInspectPatternWithID(ID);
   }
 };
 
