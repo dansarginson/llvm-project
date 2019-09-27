@@ -2895,7 +2895,7 @@ public:
   void EmitInspectStmt(const InspectStmt &S);
   void EmitWildcardPatternStmt(const WildcardPatternStmt &S);
   void EmitIdentifierPatternStmt(const IdentifierPatternStmt &S);
-  void EmitExpressionStmt(const ExpressionPatternStmt &S);
+  void EmitExpressionPatternStmt(const ExpressionPatternStmt &S);
 
   void EmitAsmStmt(const AsmStmt &S);
 

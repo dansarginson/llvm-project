@@ -97,6 +97,9 @@ void CodeGenFunction::EmitStmt(const Stmt *S, ArrayRef<const Attr *> Attrs) {
   case Stmt::DefaultStmtClass:
   case Stmt::CaseStmtClass:
   case Stmt::SEHLeaveStmtClass:
+  case Stmt::WildcardPatternStmtClass:
+  case Stmt::IdentifierPatternStmtClass:
+  case Stmt::ExpressionPatternStmtClass:
     llvm_unreachable("should have emitted these statements as simple");
 
 #define STMT(Type, Base)
@@ -358,6 +361,9 @@ bool CodeGenFunction::EmitSimpleStmt(const Stmt *S) {
   case Stmt::DefaultStmtClass:  EmitDefaultStmt(cast<DefaultStmt>(*S));   break;
   case Stmt::CaseStmtClass:     EmitCaseStmt(cast<CaseStmt>(*S));         break;
   case Stmt::SEHLeaveStmtClass: EmitSEHLeaveStmt(cast<SEHLeaveStmt>(*S)); break;
+  case Stmt::WildcardPatternStmtClass:   EmitWildcardPatternStmt(cast<WildcardPatternStmt>(*S)); break;
+  case Stmt::IdentifierPatternStmtClass: EmitIdentifierPatternStmt(cast<IdentifierPatternStmt>(*S)); break;
+  case Stmt::ExpressionPatternStmtClass: EmitExpressionPatternStmt(cast<ExpressionPatternStmt>(*S)); break;
   }
 
   return true;
@@ -1721,15 +1727,95 @@ void CodeGenFunction::EmitSwitchStmt(const SwitchStmt &S) {
 }
 
 void CodeGenFunction::EmitInspectStmt(const InspectStmt &S) {
+  if (S.getInit())
+    EmitStmt(S.getInit());
+
+  if (S.getConditionVariable())
+    EmitDecl(*S.getConditionVariable());
+
+  const PatternStmt* PS = S.getPatternList();
+  assert(PS && "No patterns found in inspect statement");
+
+  // we render these patterns in terms of 
+  // if / else if / else if / else if.
+  // This meets our "first match" semantics,
+  // clearly there are optimisations to be made...
+  llvm::BasicBlock* ThenBlock = createBasicBlock("if.then");
+  llvm::BasicBlock* ContBlock = createBasicBlock("if.end");
+  llvm::BasicBlock* ElseBlock = ContBlock;
+
+  // inspect(a) {
+  //   1: x();
+  //   2: y();
+  //   3: z();
+  // }
+  //
+  // will map to:
+  //
+  // if(a==1) {
+  //   x();
+  // }
+  // else {
+  //   if(a==2) {
+  //     y();
+  //   }
+  //   else {
+  //     if(a==3) {
+  //       z();
+  //     }
+  //   }
+  // }
+  //
+  // which LLVM tells me will translate to something like:
+  //  %cmp = icmp eq i32 %0, 1
+  //  br i1 %cmp, label %if.then, label %if.else
+  //
+  //if.then:                                          ; preds = %entry
+  //  call void @"?x@@YAXXZ"()
+  //  br label %if.end7
+  //
+  //if.else:                                          ; preds = %entry
+  //  %1 = load i32, i32* %a, align 4
+  //  %cmp1 = icmp eq i32 %1, 2
+  //  br i1 %cmp1, label %if.then2, label %if.else3
+  //
+  //if.then2:                                         ; preds = %if.else
+  //  call void @"?y@@YAXXZ"()
+  //  br label %if.end6
+  //
+  //if.else3:                                         ; preds = %if.else
+  //  %2 = load i32, i32* %a, align 4
+  //  %cmp4 = icmp eq i32 %2, 3
+  //  br i1 %cmp4, label %if.then5, label %if.end
+  //
+  //if.then5:                                         ; preds = %if.else3
+  //  call void @"?z@@YAXXZ"()
+  //  br label %if.end
+  //
+  //if.end:                                           ; preds = %if.then5, %if.else3
+  //  br label %if.end6
+  //
+  //if.end6:                                          ; preds = %if.end, %if.then2
+  //  br label %if.end7
+  //
+  //if.end7:                                          ; preds = %if.end6, %if.then
+  //  %3 = load i32, i32* %retval, align 4
+  //  ret i32 %3
 }
 
-void EmitWildcardPatternStmt(const WildcardPatternStmt &S) {
+void CodeGenFunction::EmitWildcardPatternStmt(const WildcardPatternStmt &S) {
+  llvm::BasicBlock* PatternDest = createBasicBlock("pat.bb");
+  EmitBlock(PatternDest, &S);
 }
 
-void EmitIdentifierPatternStmt(const IdentifierPatternStmt &S) {
+void CodeGenFunction::EmitIdentifierPatternStmt(const IdentifierPatternStmt &S) {
+  llvm::BasicBlock* PatternDest = createBasicBlock("pat.bb");
+  EmitBlock(PatternDest, &S);
 }
 
-void EmitExpressionStmt(const ExpressionPatternStmt &S) {
+void CodeGenFunction::EmitExpressionPatternStmt(const ExpressionPatternStmt &S) {
+  llvm::BasicBlock* PatternDest = createBasicBlock("pat.bb");
+  EmitBlock(PatternDest, &S);
 }
 
 static std::string
