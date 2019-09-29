@@ -1398,6 +1398,20 @@ void JSONNodeDumper::VisitCaseStmt(const CaseStmt *CS) {
   attributeOnlyIfTrue("isGNURange", CS->caseStmtIsGNURange());
 }
 
+void JSONNodeDumper::VisitInspectStmt(const InspectStmt *SS) {
+  attributeOnlyIfTrue("hasInit", SS->hasInitStorage());
+  attributeOnlyIfTrue("hasVar", SS->hasVarStorage());
+}
+
+void JSONNodeDumper::VisitWildcardPatrternStmt(const WildcardPatternStmt *SS) {
+}
+
+void JSONNodeDumper::VisitIdentifierPatternStmt(const IdentifierPatternStmt *SS) {
+}
+
+void JSONNodeDumper::VisitExpressionPatternStmt(const ExpressionPatternStmt *SS) {
+}
+
 void JSONNodeDumper::VisitLabelStmt(const LabelStmt *LS) {
   JOS.attribute("name", LS->getName());
   JOS.attribute("declId", createPointerRepresentation(LS->getDecl()));

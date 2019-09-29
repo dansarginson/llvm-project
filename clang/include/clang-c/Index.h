@@ -2555,7 +2555,23 @@ enum CXCursorKind {
    */
   CXCursor_BuiltinBitCastExpr = 280,
 
-  CXCursor_LastStmt = CXCursor_BuiltinBitCastExpr,
+  /** An inspect statement.
+   */
+  CXCursor_InspectStmt = 281,
+
+  /** A wildcard pattern statement.
+   */
+  CXCursor_WildcardPatternStmt = 282,
+
+  /** An identifier pattern statement.
+   */
+  CXCursor_IdentifierPatternStmt = 283,
+
+  /** An expression pattern statement.
+   */
+  CXCursor_ExpressionPatternStmt = 284,
+
+  CXCursor_LastStmt = CXCursor_ExpressionPatternStmt,
 
   /**
    * Cursor that represents the translation unit itself.

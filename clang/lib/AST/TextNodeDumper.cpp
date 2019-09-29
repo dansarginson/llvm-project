@@ -665,6 +665,21 @@ void TextNodeDumper::VisitSwitchStmt(const SwitchStmt *Node) {
     OS << " has_var";
 }
 
+void TextNodeDumper::VisitInspectStmt(const InspectStmt *Node) {
+  if (Node->hasInitStorage())
+    OS << " has_init";
+  if (Node->hasVarStorage())
+    OS << " has_var";
+}
+void TextNodeDumper::VisitWildcardPatrternStmt(const WildcardPatternStmt *Node) {
+}
+
+void TextNodeDumper::VisitIdentifierPatternStmt(const IdentifierPatternStmt *Node) {
+}
+
+void TextNodeDumper::VisitExpressionPatternStmt(const ExpressionPatternStmt *Node) {
+}
+
 void TextNodeDumper::VisitWhileStmt(const WhileStmt *Node) {
   if (Node->hasVarStorage())
     OS << " has_var";

@@ -514,6 +514,10 @@ namespace clang {
     ExpectedStmt VisitAttributedStmt(AttributedStmt *S);
     ExpectedStmt VisitIfStmt(IfStmt *S);
     ExpectedStmt VisitSwitchStmt(SwitchStmt *S);
+    ExpectedStmt VisitInspectStmt(InspectStmt *S);
+    ExpectedStmt VisitWildcardPatternStmt(WildcardPatternStmt *S);
+    ExpectedStmt VisitIdentifierPatternStmt(IdentifierPatternStmt *S);
+    ExpectedStmt VisitExpressionPatternStmt(ExpressionPatternStmt *S);
     ExpectedStmt VisitWhileStmt(WhileStmt *S);
     ExpectedStmt VisitDoStmt(DoStmt *S);
     ExpectedStmt VisitForStmt(ForStmt *S);
@@ -5936,6 +5940,89 @@ ExpectedStmt ASTNodeImporter::VisitSwitchStmt(SwitchStmt *S) {
       ToStmt->setSwitchCaseList(*ToSCOrErr);
     LastChainedSwitchCase = *ToSCOrErr;
   }
+
+  return ToStmt;
+}
+
+ExpectedStmt ASTNodeImporter::VisitInspectStmt(InspectStmt *S) {
+  auto Imp = importSeq(
+    S->getInit(), S->getConditionVariable(), S->getCond(),
+    S->getBody(), S->getInspectLoc());
+  if (!Imp)
+    return Imp.takeError();
+
+  Stmt *ToInit, *ToBody;
+  VarDecl *ToConditionVariable;
+  Expr *ToCond;
+  SourceLocation ToInspectLoc;
+  std::tie(ToInit, ToConditionVariable, ToCond, ToBody, ToInspectLoc) = *Imp;
+
+  auto *ToStmt = InspectStmt::Create(Importer.getToContext(), ToInit,
+    ToConditionVariable, ToCond);
+  ToStmt->setBody(ToBody);
+  ToStmt->setInspectLoc(ToInspectLoc);
+
+  // Now we have to re-chain the patterns.
+  PatternStmt *LastChainedPattern = nullptr;
+  for (PatternStmt *PS = S->getPatternList(); PS != nullptr;
+    PS = PS->getNextPattern()) {
+    Expected<PatternStmt *> ToPatternOrErr = import(PS);
+    if (!ToPatternOrErr)
+      return ToPatternOrErr.takeError();
+    if (LastChainedPattern)
+      LastChainedPattern->setNextPattern(*ToPatternOrErr);
+    else
+      ToStmt->setPatternList(*ToPatternOrErr);
+    LastChainedPattern = *ToPatternOrErr;
+  }
+
+  return ToStmt;
+}
+
+ExpectedStmt ASTNodeImporter::VisitWildcardPatternStmt(WildcardPatternStmt *S) {
+  auto Imp = importSeq(S->getSubStmt(), S->getPatternLoc(), S->getColonLoc());
+  if (!Imp)
+    return Imp.takeError();
+
+  Stmt *ToSubStmt;
+  SourceLocation ToPatternLoc, ToColonLoc;
+  std::tie(ToSubStmt, ToPatternLoc, ToColonLoc) = *Imp;
+
+  auto *ToStmt = WildcardPatternStmt::Create(Importer.getToContext(), ToPatternLoc, ToColonLoc);
+  ToStmt->setSubStmt(ToSubStmt);
+
+  return ToStmt;
+}
+
+ExpectedStmt ASTNodeImporter::VisitIdentifierPatternStmt(IdentifierPatternStmt *S) {
+  auto Imp = importSeq(S->getSubStmt(), S->getPatternLoc(), S->getColonLoc());
+  if (!Imp)
+    return Imp.takeError();
+
+  // TODO
+  Token ToIdentifierTok;
+  Stmt *ToSubStmt;
+  SourceLocation ToPatternLoc, ToColonLoc;
+  std::tie(ToSubStmt, ToPatternLoc, ToColonLoc) = *Imp;
+
+  auto *ToStmt = IdentifierPatternStmt::Create(Importer.getToContext(), ToIdentifierTok, ToPatternLoc, ToColonLoc);
+  ToStmt->setSubStmt(ToSubStmt);
+
+  return ToStmt;
+}
+
+ExpectedStmt ASTNodeImporter::VisitExpressionPatternStmt(ExpressionPatternStmt *S) {
+  auto Imp = importSeq(S->getLHS(), S->getSubStmt(), S->getPatternLoc(), S->getColonLoc());
+  if (!Imp)
+    return Imp.takeError();
+
+  Expr *ToCondition;
+  Stmt *ToSubStmt;
+  SourceLocation ToPatternLoc, ToColonLoc;
+  std::tie(ToCondition, ToSubStmt, ToPatternLoc, ToColonLoc) = *Imp;
+
+  auto *ToStmt = ExpressionPatternStmt::Create(Importer.getToContext(), ToCondition, ToPatternLoc, ToColonLoc);
+  ToStmt->setSubStmt(ToSubStmt);
 
   return ToStmt;
 }
