@@ -1736,71 +1736,69 @@ void CodeGenFunction::EmitInspectStmt(const InspectStmt &S) {
   const PatternStmt* PS = S.getPatternList();
   assert(PS && "No patterns found in inspect statement");
 
-  // we render these patterns in terms of 
-  // if / else if / else if / else if.
   // This meets our "first match" semantics,
   // clearly there are optimisations to be made...
-  llvm::BasicBlock* ThenBlock = createBasicBlock("if.then");
-  llvm::BasicBlock* ContBlock = createBasicBlock("if.end");
-  llvm::BasicBlock* ElseBlock = ContBlock;
+  llvm::BasicBlock* ContBlock = createBasicBlock("inspect.end");
 
-  // inspect(a) {
-  //   1: x();
-  //   2: y();
-  //   3: z();
-  // }
-  //
-  // will map to:
-  //
-  // if(a==1) {
-  //   x();
-  // }
-  // else {
-  //   if(a==2) {
-  //     y();
-  //   }
-  //   else {
-  //     if(a==3) {
-  //       z();
-  //     }
-  //   }
-  // }
-  //
-  // which LLVM tells me will translate to something like:
-  //  %cmp = icmp eq i32 %0, 1
-  //  br i1 %cmp, label %if.then, label %if.else
-  //
-  //if.then:                                          ; preds = %entry
-  //  call void @"?x@@YAXXZ"()
-  //  br label %if.end7
-  //
-  //if.else:                                          ; preds = %entry
-  //  %1 = load i32, i32* %a, align 4
-  //  %cmp1 = icmp eq i32 %1, 2
-  //  br i1 %cmp1, label %if.then2, label %if.else3
-  //
-  //if.then2:                                         ; preds = %if.else
-  //  call void @"?y@@YAXXZ"()
-  //  br label %if.end6
-  //
-  //if.else3:                                         ; preds = %if.else
-  //  %2 = load i32, i32* %a, align 4
-  //  %cmp4 = icmp eq i32 %2, 3
-  //  br i1 %cmp4, label %if.then5, label %if.end
-  //
-  //if.then5:                                         ; preds = %if.else3
-  //  call void @"?z@@YAXXZ"()
-  //  br label %if.end
-  //
-  //if.end:                                           ; preds = %if.then5, %if.else3
-  //  br label %if.end6
-  //
-  //if.end6:                                          ; preds = %if.end, %if.then2
-  //  br label %if.end7
-  //
-  //if.end7:                                          ; preds = %if.end6, %if.then
-  //  %3 = load i32, i32* %retval, align 4
-  //  ret i32 %3
+  // YUCK! Am I really responsible for de-conflicting
+  // block names? I can't see this happening elsewhere in
+  // this file but if/else does emit an incrementing 
+  // counter in its blocks. How?
+  auto nextCount = 0;
+  auto newPatternTest = [&nextCount, this]() {
+    auto name = llvm::join_items("", "pattern.test", llvm::itostr(nextCount++));
+    return createBasicBlock(name);
+  };
+
+  auto patternBodyCount = 0;
+  auto newPatternBody = [&patternBodyCount, this]() {
+    auto name = llvm::join_items("", "pattern.body", llvm::itostr(patternBodyCount++));
+    return createBasicBlock(name);
+  };
+
+  llvm::BasicBlock* NextPatternTest = newPatternTest();
+  while (PS) {
+    auto *thisPattern = NextPatternTest;
+
+    // we jump to our next pattern test 
+    // unless there are no more patterns.
+    const bool LastPattern = !PS->getNextPattern();
+    if (LastPattern) {
+      NextPatternTest = ContBlock;
+    }
+    else {
+      NextPatternTest = newPatternTest();
+    }
+
+    if (const auto *WPS = dyn_cast<WildcardPatternStmt>(PS)) {
+      // we don't emit a "body" block for wildcard patterns
+      // as the "test" block will do, and that's what we 
+      // jump to from previous patterns
+      EmitBlock(thisPattern);
+      EmitStmt(WPS->getSubStmt());
+      EmitBranch(ContBlock);
+    }
+    else if (const auto *IPS = dyn_cast<IdentifierPatternStmt>(PS)) {
+      EmitBlock(thisPattern);
+      auto *body = newPatternBody();
+      EmitBranchOnBoolExpr(S.getCond(), body, NextPatternTest, getProfileCount(PS->getSubStmt()));
+      EmitBlock(body);
+      EmitStmt(IPS->getSubStmt());
+      EmitBranch(ContBlock);
+    }
+    else if (const auto *EPS = dyn_cast<ExpressionPatternStmt>(PS)) {
+      EmitBlock(thisPattern);
+      auto *body = newPatternBody();
+      EmitBranchOnBoolExpr(S.getCond(), body, NextPatternTest, getProfileCount(PS->getSubStmt()));
+      EmitBlock(body);
+      EmitStmt(EPS->getSubStmt());
+      EmitBranch(ContBlock);
+    }
+
+    PS = PS->getNextPattern();
+  }
+
+  EmitBlock(ContBlock);
 }
 
 void CodeGenFunction::EmitWildcardPatternStmt(const WildcardPatternStmt &S) {
