@@ -522,7 +522,9 @@ StmtResult Sema::ActOnWildcardPattern(SourceLocation WildcardLoc,
     return StmtError();
   }
 
-  WildcardPatternStmt *WPS = new (Context) WildcardPatternStmt(WildcardLoc, ColonLoc, SubStmt);
+  auto* WPS = WildcardPatternStmt::Create(Context, WildcardLoc, ColonLoc);
+  WPS->setSubStmt(SubStmt);
+
   getCurFunction()->InspectStack.back().getPointer()->addPattern(WPS);
   return WPS;
 }
@@ -535,7 +537,10 @@ StmtResult Sema::ActOnIdentifierPattern(Token IdentifierTok,
     return StmtError();
   }
 
-  IdentifierPatternStmt *IPS = new (Context) IdentifierPatternStmt(IdentifierTok, ConditionLoc, ColonLoc, SubStmt);
+  auto* IPS = IdentifierPatternStmt::Create(Context, IdentifierTok, 
+                                            ConditionLoc, ColonLoc);
+  IPS->setSubStmt(SubStmt);
+
   getCurFunction()->InspectStack.back().getPointer()->addPattern(IPS);
   return IPS;
 }
@@ -548,7 +553,9 @@ StmtResult Sema::ActOnExpressionPattern(ExprResult Condition,
     return StmtError();
   }
 
-  ExpressionPatternStmt *EPS = new (Context) ExpressionPatternStmt(Condition.get(), ConditionLoc, ColonLoc, SubStmt);
+  auto* EPS = ExpressionPatternStmt::Create(Context, Condition.get(), 
+                                            ConditionLoc, ColonLoc);
+  EPS->setSubStmt(SubStmt);
   getCurFunction()->InspectStack.back().getPointer()->addPattern(EPS);
   return EPS;
 }
@@ -795,7 +802,7 @@ StmtResult Sema::ActOnStartOfSwitchStmt(SourceLocation SwitchLoc,
 StmtResult Sema::ActOnStartOfInspectStmt(SourceLocation InspectLoc, Stmt *InitStmt,
                                          ConditionResult Cond) {
   Expr *CondExpr = Cond.get().second;
-  assert((Cond.isInvalid() || CondExpr) && "inspect with no condition");
+  assert((!Cond.isInvalid() || CondExpr) && "inspect with no condition");
 
   auto *IS = InspectStmt::Create(Context, InitStmt, Cond.get().first, CondExpr);
   getCurFunction()->InspectStack.push_back(
@@ -827,7 +834,8 @@ Sema::ActOnFinishInspectStmt(SourceLocation InspectLoc, Stmt *Inspect,
 }
 
 ExprResult Sema::CheckInspectCondition(SourceLocation InspectLoc, Expr* Cond) {
-	return ExprError();
+  // C99 6.8.4.2p5 - Integer promotions are performed on the controlling expr.
+  return UsualUnaryConversions(Cond);
 }
 
 static void AdjustAPSInt(llvm::APSInt &Val, unsigned BitWidth, bool IsSigned) {
