@@ -977,13 +977,18 @@ public:
      assert(!SC->getNextPattern() &&
        "pattern already added to an inspect");
 
-     // note this logic was inherited from switch
-     // where the order of traversal of case/default
-     // statements doesn't matter. May have to revisit
-     // this to maintain the linked list in insertion
-     // order
-     SC->setNextPattern(FirstPattern);
-     FirstPattern = SC;
+     if (!FirstPattern) {
+       FirstPattern = SC;
+       return;
+     }
+
+     // iterate to the (current) end of the linked list
+     PatternStmt*current = FirstPattern;
+     while (current->getNextPattern()) {
+       current = current->getNextPattern();
+     }
+
+     current->setNextPattern(SC);
   }
 
   SourceLocation getBeginLoc() const { return getInspectLoc(); }
