@@ -219,7 +219,7 @@ void ASTStmtWriter::VisitWildcardPatternStmt(WildcardPatternStmt *S) {
 
 void ASTStmtWriter::VisitIdentifierPatternStmt(IdentifierPatternStmt *S) {
   VisitPatternStmt(S);
-  // TODO: need to serialize the identifier somehow
+  Record.AddStmt(S->getCond());
   Record.AddStmt(S->getSubStmt());
   Code = serialization::STMT_IDENTIFIERPATTERN;
 }

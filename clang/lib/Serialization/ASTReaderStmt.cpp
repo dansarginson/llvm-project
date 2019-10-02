@@ -309,13 +309,13 @@ void ASTStmtReader::VisitWildcardPatternStmt(WildcardPatternStmt *S) {
 
 void ASTStmtReader::VisitIdentifierPatternStmt(IdentifierPatternStmt *S) {
   VisitPatternStmt(S);
-  // TODO: need to serialize the identifier
+  S->setCond(cast<Expr>(Record.readSubStmt()));
   S->setSubStmt(Record.readSubStmt());
 }
 
 void ASTStmtReader::VisitExpressionPatternStmt(ExpressionPatternStmt *S) {
   VisitPatternStmt(S);
-  S->setLHS(cast<clang::Expr>(Record.readSubStmt()));
+  S->setLHS(cast<Expr>(Record.readSubStmt()));
   S->setSubStmt(Record.readSubStmt());
 }
 

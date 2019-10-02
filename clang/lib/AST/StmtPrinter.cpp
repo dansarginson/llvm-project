@@ -310,7 +310,8 @@ void StmtPrinter::VisitWildcardPatternStmt(WildcardPatternStmt *Node) {
 }
 
 void StmtPrinter::VisitIdentifierPatternStmt(IdentifierPatternStmt *Node) {
-  Indent() << Node->getIdentifierToken().getIdentifierInfo()->getName();
+  Indent();
+  PrintExpr(Node->getCond());
   OS << " :" << NL;
   PrintStmt(Node->getSubStmt(), 0);
 }

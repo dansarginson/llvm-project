@@ -529,16 +529,17 @@ StmtResult Sema::ActOnWildcardPattern(SourceLocation WildcardLoc,
   return WPS;
 }
 
-StmtResult Sema::ActOnIdentifierPattern(Token IdentifierTok, 
-                                        SourceLocation ConditionLoc,
+StmtResult Sema::ActOnIdentifierPattern(SourceLocation ConditionLoc,
                                         SourceLocation ColonLoc,
+                                        Expr *Condition,
                                         Stmt *SubStmt) {
   if (getCurFunction()->InspectStack.empty()) {
     return StmtError();
   }
 
-  auto* IPS = IdentifierPatternStmt::Create(Context, IdentifierTok, 
+  auto* IPS = IdentifierPatternStmt::Create(Context,
                                             ConditionLoc, ColonLoc);
+  IPS->setCond(Condition);
   IPS->setSubStmt(SubStmt);
 
   getCurFunction()->InspectStack.back().getPointer()->addPattern(IPS);

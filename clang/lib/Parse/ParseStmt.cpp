@@ -19,6 +19,7 @@
 #include "clang/Parse/RAIIObjectsForParser.h"
 #include "clang/Sema/DeclSpec.h"
 #include "clang/Sema/Scope.h"
+#include "clang/Sema/ScopeInfo.h"
 #include "clang/Sema/TypoCorrection.h"
 using namespace clang;
 
@@ -733,8 +734,13 @@ StmtResult Parser::ParseIdentifierPattern(ParsedStmtContext StmtCtx) {
 
   // identifier ':' statement
   // ^
-  Token IdentTok = Tok; // Save the whole token.
-  SourceLocation IdentifierLocation = ConsumeToken(); // eat the identifier.
+  SourceLocation IdentifierLocation = Tok.getLocation();
+  ExprResult Identifier = ParseExpression();
+
+  InspectStmt* Inspect = Actions.getCurFunction()->InspectStack.back().getPointer();
+
+  ExprResult Condition = Actions.ActOnBinOp(getCurScope(), IdentifierLocation,
+    tok::TokenKind::equalequal, Identifier.get(), Inspect->getCond());
 
   // identifier ':' statement
   //            ^
@@ -750,7 +756,7 @@ StmtResult Parser::ParseIdentifierPattern(ParsedStmtContext StmtCtx) {
   if (SubStmt.isInvalid())
     SubStmt = Actions.ActOnNullStmt(ColonLoc);
 
-  return Actions.ActOnIdentifierPattern(IdentTok, IdentifierLocation, ColonLoc, SubStmt.get());
+  return Actions.ActOnIdentifierPattern(IdentifierLocation, ColonLoc, Condition.get(), SubStmt.get());
 }
 
 StmtResult Parser::ParseExpressionPattern(ParsedStmtContext StmtCtx, Expr* Condition) {

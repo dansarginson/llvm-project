@@ -203,12 +203,12 @@ WildcardPatternStmt *WildcardPatternStmt::CreateEmpty(const ASTContext &Ctx) {
   return new (Mem) WildcardPatternStmt(EmptyShell());
 }
 
-IdentifierPatternStmt *IdentifierPatternStmt::Create(const ASTContext &Ctx, Token identifierTok, 
+IdentifierPatternStmt *IdentifierPatternStmt::Create(const ASTContext &Ctx, 
                                                      SourceLocation caseLoc, SourceLocation colonLoc) {
   void *Mem = Ctx.Allocate(
     totalSizeToAlloc<Stmt *>(NumMandatoryStmtPtr),
     alignof(IdentifierPatternStmt));
-  return new (Mem) IdentifierPatternStmt(identifierTok, caseLoc, colonLoc, nullptr);
+  return new (Mem) IdentifierPatternStmt(caseLoc, colonLoc, nullptr, nullptr);
 }
 
 IdentifierPatternStmt *IdentifierPatternStmt::CreateEmpty(const ASTContext &Ctx) {

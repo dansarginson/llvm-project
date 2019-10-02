@@ -5995,18 +5995,18 @@ ExpectedStmt ASTNodeImporter::VisitWildcardPatternStmt(WildcardPatternStmt *S) {
 }
 
 ExpectedStmt ASTNodeImporter::VisitIdentifierPatternStmt(IdentifierPatternStmt *S) {
-  auto Imp = importSeq(S->getSubStmt(), S->getPatternLoc(), S->getColonLoc());
+  auto Imp = importSeq(S->getCond(), S->getSubStmt(), S->getPatternLoc(), S->getColonLoc());
   if (!Imp)
     return Imp.takeError();
 
-  // TODO
-  Token ToIdentifierTok;
+  Expr *ToCond;
   Stmt *ToSubStmt;
   SourceLocation ToPatternLoc, ToColonLoc;
-  std::tie(ToSubStmt, ToPatternLoc, ToColonLoc) = *Imp;
+  std::tie(ToCond, ToSubStmt, ToPatternLoc, ToColonLoc) = *Imp;
 
-  auto *ToStmt = IdentifierPatternStmt::Create(Importer.getToContext(), ToIdentifierTok, ToPatternLoc, ToColonLoc);
+  auto *ToStmt = IdentifierPatternStmt::Create(Importer.getToContext(), ToPatternLoc, ToColonLoc);
   ToStmt->setSubStmt(ToSubStmt);
+  ToStmt->setCond(ToCond);
 
   return ToStmt;
 }

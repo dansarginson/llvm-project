@@ -639,24 +639,26 @@ class IdentifierPatternStmt final
 
   // IdentifierPatternStmt is followed by several trailing objects.
   //
+  // * A "Expr *" for the condition of the pattern statement. Always present.
+  //
   // * A "Stmt *" for the substatement of the pattern statement. Always present.
 
-  enum { NumMandatoryStmtPtr = 1 };
+  enum { CondOffset = 0, SubStmtOffsetFromCond = 1 };
+  enum { NumMandatoryStmtPtr = 2 };
+
+  unsigned condOffset() const { return CondOffset; }
+  unsigned subStmtOffset() const { return condOffset() + SubStmtOffsetFromCond; }
 
   unsigned numTrailingObjects(OverloadToken<Stmt *>) const {
     return NumMandatoryStmtPtr;
   }
 
-  unsigned subStmtOffset() const { return 0; }
-
-  Token IdentifierToken;
-
 public:
 
-  IdentifierPatternStmt(Token identifierTok, SourceLocation patternLoc, SourceLocation colonLoc, Stmt *substmt)
+  IdentifierPatternStmt(SourceLocation patternLoc, SourceLocation colonLoc, Expr *condition, Stmt *substmt)
     : PatternStmt(IdentifierPatternStmtClass, patternLoc, colonLoc) {
-    setIdentifierToken(identifierTok);
     setSubStmt(substmt);
+    setCond(condition);
   }
 
   /// Build an empty identifier pattern statement.
@@ -665,17 +667,26 @@ public:
   }
 
   /// Build a identifier pattern statement.
-  static IdentifierPatternStmt *Create(const ASTContext &Ctx, Token identifierTok,
+  static IdentifierPatternStmt *Create(const ASTContext &Ctx,
                                        SourceLocation patternLoc, SourceLocation colonLoc);
 
   /// Build an empty identifier pattern statement.
   static IdentifierPatternStmt *CreateEmpty(const ASTContext &Ctx);
 
-  Token getIdentifierToken() const { return IdentifierToken; }
-  void setIdentifierToken(Token identifierTok) { IdentifierToken = identifierTok; }
-
   SourceLocation getIdentifierLoc() const { return getPatternLoc(); }
   void setIdentifierLoc(SourceLocation L) { setPatternLoc(L); }
+
+  Expr* getCond() {
+    return reinterpret_cast<Expr*>(getTrailingObjects<Stmt*>()[condOffset()]);
+  }
+
+  const Expr* getCond() const {
+    return reinterpret_cast<Expr*>(getTrailingObjects<Stmt*>()[condOffset()]);
+  }
+
+  void setCond(Expr* Val) {
+    getTrailingObjects<Stmt*>()[condOffset()] = reinterpret_cast<Stmt*>(Val);
+  }
 
   Stmt *getSubStmt() { return getTrailingObjects<Stmt *>()[subStmtOffset()]; }
   const Stmt *getSubStmt() const {
