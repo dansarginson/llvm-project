@@ -6005,14 +6005,14 @@ ExpectedStmt ASTNodeImporter::VisitIdentifierPatternStmt(IdentifierPatternStmt *
   std::tie(ToCond, ToSubStmt, ToPatternLoc, ToColonLoc) = *Imp;
 
   auto *ToStmt = IdentifierPatternStmt::Create(Importer.getToContext(), ToPatternLoc, ToColonLoc);
-  ToStmt->setSubStmt(ToSubStmt);
   ToStmt->setCond(ToCond);
+  ToStmt->setSubStmt(ToSubStmt);  
 
   return ToStmt;
 }
 
 ExpectedStmt ASTNodeImporter::VisitExpressionPatternStmt(ExpressionPatternStmt *S) {
-  auto Imp = importSeq(S->getLHS(), S->getSubStmt(), S->getPatternLoc(), S->getColonLoc());
+  auto Imp = importSeq(S->getCond(), S->getSubStmt(), S->getPatternLoc(), S->getColonLoc());
   if (!Imp)
     return Imp.takeError();
 
@@ -6021,7 +6021,8 @@ ExpectedStmt ASTNodeImporter::VisitExpressionPatternStmt(ExpressionPatternStmt *
   SourceLocation ToPatternLoc, ToColonLoc;
   std::tie(ToCondition, ToSubStmt, ToPatternLoc, ToColonLoc) = *Imp;
 
-  auto *ToStmt = ExpressionPatternStmt::Create(Importer.getToContext(), ToCondition, ToPatternLoc, ToColonLoc);
+  auto *ToStmt = ExpressionPatternStmt::Create(Importer.getToContext(), ToPatternLoc, ToColonLoc);
+  ToStmt->setCond(ToCondition);
   ToStmt->setSubStmt(ToSubStmt);
 
   return ToStmt;

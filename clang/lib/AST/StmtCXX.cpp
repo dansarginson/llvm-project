@@ -218,12 +218,12 @@ IdentifierPatternStmt *IdentifierPatternStmt::CreateEmpty(const ASTContext &Ctx)
   return new (Mem) IdentifierPatternStmt(EmptyShell());
 }
 
-ExpressionPatternStmt *ExpressionPatternStmt::Create(const ASTContext &Ctx, Expr *lhs, 
+ExpressionPatternStmt *ExpressionPatternStmt::Create(const ASTContext &Ctx,
                                                      SourceLocation caseLoc, SourceLocation colonLoc) {
   void *Mem = Ctx.Allocate(
     totalSizeToAlloc<Stmt *>(NumMandatoryStmtPtr),
     alignof(ExpressionPatternStmt));
-  return new (Mem) ExpressionPatternStmt(lhs, caseLoc, colonLoc, nullptr);
+  return new (Mem) ExpressionPatternStmt(caseLoc, colonLoc, nullptr, nullptr);
 }
 
 ExpressionPatternStmt *ExpressionPatternStmt::CreateEmpty(const ASTContext &Ctx) {

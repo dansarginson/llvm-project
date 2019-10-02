@@ -1789,7 +1789,7 @@ void CodeGenFunction::EmitInspectStmt(const InspectStmt &S) {
     else if (const auto *EPS = dyn_cast<ExpressionPatternStmt>(PS)) {
       EmitBlock(thisPattern);
       auto *body = newPatternBody();
-      EmitBranchOnBoolExpr(S.getCond(), body, NextPatternTest, getProfileCount(PS->getSubStmt()));
+      EmitBranchOnBoolExpr(EPS->getCond(), body, NextPatternTest, getProfileCount(PS->getSubStmt()));
       EmitBlock(body);
       EmitStmt(EPS->getSubStmt());
       EmitBranch(ContBlock);

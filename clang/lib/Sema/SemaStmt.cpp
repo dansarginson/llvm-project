@@ -546,16 +546,17 @@ StmtResult Sema::ActOnIdentifierPattern(SourceLocation ConditionLoc,
   return IPS;
 }
 
-StmtResult Sema::ActOnExpressionPattern(ExprResult Condition,
-                                        SourceLocation ConditionLoc,
+StmtResult Sema::ActOnExpressionPattern(SourceLocation ConditionLoc,
                                         SourceLocation ColonLoc,
+                                        Expr *Condition,
                                         Stmt *SubStmt) {
   if (getCurFunction()->InspectStack.empty()) {
     return StmtError();
   }
 
-  auto* EPS = ExpressionPatternStmt::Create(Context, Condition.get(), 
+  auto* EPS = ExpressionPatternStmt::Create(Context,
                                             ConditionLoc, ColonLoc);
+  EPS->setCond(Condition);
   EPS->setSubStmt(SubStmt);
   getCurFunction()->InspectStack.back().getPointer()->addPattern(EPS);
   return EPS;

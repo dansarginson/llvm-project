@@ -759,10 +759,15 @@ StmtResult Parser::ParseIdentifierPattern(ParsedStmtContext StmtCtx) {
   return Actions.ActOnIdentifierPattern(IdentifierLocation, ColonLoc, Condition.get(), SubStmt.get());
 }
 
-StmtResult Parser::ParseExpressionPattern(ParsedStmtContext StmtCtx, Expr* Condition) {
+StmtResult Parser::ParseExpressionPattern(ParsedStmtContext StmtCtx, Expr* ConstantExpr) {
 
 
   SourceLocation ExpressionLoc = Tok.getLocation();
+
+  InspectStmt* Inspect = Actions.getCurFunction()->InspectStack.back().getPointer();
+
+  ExprResult Condition = Actions.ActOnBinOp(getCurScope(), ExpressionLoc,
+    tok::TokenKind::equalequal, ConstantExpr, Inspect->getCond());
 
   // constant-expression ':' statement
   //                     ^
@@ -778,7 +783,7 @@ StmtResult Parser::ParseExpressionPattern(ParsedStmtContext StmtCtx, Expr* Condi
   if (SubStmt.isInvalid())
     SubStmt = Actions.ActOnNullStmt(ColonLoc);
 
-  return Actions.ActOnExpressionPattern(Condition, ExpressionLoc, ColonLoc, SubStmt.get());
+  return Actions.ActOnExpressionPattern(ExpressionLoc, ColonLoc, Condition.get(), SubStmt.get());
 }
 
 /// ParseCaseStatement

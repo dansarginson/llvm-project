@@ -3966,11 +3966,11 @@ public:
                                   Stmt *SubStmt);
   StmtResult ActOnIdentifierPattern(SourceLocation IdentifierLoc,
                                     SourceLocation ColonLoc,
-                                    Expr* Condition,
+                                    Expr *Condition,
                                     Stmt *SubStmt);
-  StmtResult ActOnExpressionPattern(ExprResult Condition,
-                                    SourceLocation ExpressionLoc,
+  StmtResult ActOnExpressionPattern(SourceLocation ExpressionLoc,
                                     SourceLocation ColonLoc,
+                                    Expr *Condition,
                                     Stmt *SubStmt);
   class ConditionResult;
   StmtResult ActOnIfStmt(SourceLocation IfLoc, bool IsConstexpr,

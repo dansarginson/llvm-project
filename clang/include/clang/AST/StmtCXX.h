@@ -735,20 +735,20 @@ class ExpressionPatternStmt final
   // * A "Stmt *" for the LHS of the pattern statement. Always present.
   //
   // * A "Stmt *" for the substatement of the pattern statement. Always present.
-  enum { LhsOffset = 0, SubStmtOffsetFromLhs = 1 };
+  enum { CondOffset = 0, SubStmtOffsetFromCond = 1 };
   enum { NumMandatoryStmtPtr = 2 };
 
   unsigned numTrailingObjects(OverloadToken<Stmt *>) const {
     return NumMandatoryStmtPtr;
   }
 
-  unsigned lhsOffset() const { return LhsOffset; }
-  unsigned subStmtOffset() const { return lhsOffset() + SubStmtOffsetFromLhs; }
+  unsigned condOffset() const { return CondOffset; }
+  unsigned subStmtOffset() const { return condOffset() + SubStmtOffsetFromCond; }
 
 public:
-  ExpressionPatternStmt(Expr *lhs, SourceLocation patternLoc, SourceLocation colonLoc, Stmt *substmt)
+  ExpressionPatternStmt(SourceLocation patternLoc, SourceLocation colonLoc, Expr* condition, Stmt *substmt)
     : PatternStmt(ExpressionPatternStmtClass, patternLoc, colonLoc) {
-    setLHS(lhs);
+    setCond(condition);
     setSubStmt(substmt);
   }
 
@@ -758,8 +758,7 @@ public:
   }
 
   /// Build a expression pattern statement.
-  static ExpressionPatternStmt *Create(const ASTContext &Ctx, Expr *lhs, 
-                                       SourceLocation patternLoc, SourceLocation colonLoc);
+  static ExpressionPatternStmt *Create(const ASTContext &Ctx, SourceLocation patternLoc, SourceLocation colonLoc);
 
   /// Build an empty expression pattern statement.
   static ExpressionPatternStmt *CreateEmpty(const ASTContext &Ctx);
@@ -767,16 +766,16 @@ public:
   SourceLocation getIdentifierLoc() const { return getPatternLoc(); }
   void setIdentifierLoc(SourceLocation L) { setPatternLoc(L); }
 
-  Expr *getLHS() {
-    return reinterpret_cast<Expr *>(getTrailingObjects<Stmt *>()[lhsOffset()]);
+  Expr *getCond() {
+    return reinterpret_cast<Expr *>(getTrailingObjects<Stmt *>()[condOffset()]);
   }
 
-  const Expr *getLHS() const {
-    return reinterpret_cast<Expr *>(getTrailingObjects<Stmt *>()[lhsOffset()]);
+  const Expr *getCond() const {
+    return reinterpret_cast<Expr *>(getTrailingObjects<Stmt *>()[condOffset()]);
   }
 
-  void setLHS(Expr *Val) {
-    getTrailingObjects<Stmt *>()[lhsOffset()] = reinterpret_cast<Stmt *>(Val);
+  void setCond(Expr *Val) {
+    getTrailingObjects<Stmt *>()[condOffset()] = reinterpret_cast<Stmt *>(Val);
   }
 
   Stmt *getSubStmt() { return getTrailingObjects<Stmt *>()[subStmtOffset()]; }
