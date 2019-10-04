@@ -1770,11 +1770,18 @@ void CodeGenFunction::EmitInspectStmt(const InspectStmt &S) {
       NextPatternTest = newPatternTest();
     }
 
+    auto* guard = PS->getPatternGuard();
+
     if (const auto *WPS = dyn_cast<WildcardPatternStmt>(PS)) {
       // we don't emit a "body" block for wildcard patterns
       // as the "test" block will do, and that's what we 
       // jump to from previous patterns
       EmitBlock(thisPattern);
+
+      if (guard) {
+        EmitBranchOnBoolExpr(guard, thisPattern, NextPatternTest, getProfileCount(PS->getSubStmt()));
+      }
+
       EmitStmt(WPS->getSubStmt());
       EmitBranch(ContBlock);
     }
@@ -1782,6 +1789,11 @@ void CodeGenFunction::EmitInspectStmt(const InspectStmt &S) {
       EmitBlock(thisPattern);
       auto *body = newPatternBody();
       EmitBranchOnBoolExpr(IPS->getCond(), body, NextPatternTest, getProfileCount(PS->getSubStmt()));
+
+      if (guard) {
+        EmitBranchOnBoolExpr(guard, body, NextPatternTest, getProfileCount(PS->getSubStmt()));
+      }
+
       EmitBlock(body);
       EmitStmt(IPS->getSubStmt());
       EmitBranch(ContBlock);
@@ -1790,6 +1802,11 @@ void CodeGenFunction::EmitInspectStmt(const InspectStmt &S) {
       EmitBlock(thisPattern);
       auto *body = newPatternBody();
       EmitBranchOnBoolExpr(EPS->getCond(), body, NextPatternTest, getProfileCount(PS->getSubStmt()));
+
+      if (guard) {
+        EmitBranchOnBoolExpr(guard, body, NextPatternTest, getProfileCount(PS->getSubStmt()));
+      }
+
       EmitBlock(body);
       EmitStmt(EPS->getSubStmt());
       EmitBranch(ContBlock);

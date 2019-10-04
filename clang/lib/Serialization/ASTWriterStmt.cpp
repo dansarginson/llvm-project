@@ -201,14 +201,22 @@ void ASTStmtWriter::VisitInspectStmt(InspectStmt *S) {
   for (PatternStmt* PS = S->getPatternList(); PS;
     PS = PS->getNextPattern())
     Record.push_back(Writer.RecordInspectPatternID(PS));
-  Code = serialization::STMT_SWITCH;
+  Code = serialization::STMT_INSPECT;
 }
 
 void ASTStmtWriter::VisitPatternStmt(PatternStmt* S) {
   VisitStmt(S);
+
+  bool HasPatternGuard = S->getPatternGuard() != nullptr;
+
+  Record.push_back(HasPatternGuard);
   Record.push_back(Writer.getInspectPatternID(S));
   Record.AddSourceLocation(S->getPatternLoc());
   Record.AddSourceLocation(S->getColonLoc());
+
+  if (HasPatternGuard) {
+    Record.AddStmt(S->getPatternGuard());
+  }
 }
 
 void ASTStmtWriter::VisitWildcardPatternStmt(WildcardPatternStmt *S) {

@@ -192,6 +192,12 @@ Retry:
       return ParseLabeledStatement(Attrs, StmtCtx);
     }
 
+    if (Next.is(tok::kw_if)) { 
+      if (getCurScope()->isInspectScope()) {
+        return ParsePatternStatement(Attrs, StmtCtx);
+      }
+    }
+
     // Look up the identifier, and typo-correct it to a keyword if it's not
     // found.
     if (Next.isNot(tok::coloncolon)) {
@@ -463,7 +469,7 @@ StmtResult Parser::ParseExprStatement(ParsedStmtContext StmtCtx) {
     return ParseCaseStatement(StmtCtx, /*MissingCase=*/true, Expr);
   }
 
-  if (Tok.is(tok::colon) && getCurScope()->isInspectScope()) {
+  if ((Tok.is(tok::colon) || (Tok.is(tok::kw_if))) && getCurScope()->isInspectScope()) {
     // Recover parsing as an expression pattern.
     return ParseExpressionPattern(StmtCtx, Expr.get());
   }
@@ -710,6 +716,13 @@ StmtResult Parser::ParseWildcardPattern(ParsedStmtContext StmtCtx) {
 
   SourceLocation WilcardLoc = ConsumeToken(); // eat the identifier
 
+  // there may be a pattern guard here
+  ExprResult PatternGuard;
+  if (Tok.is(tok::kw_if)) {
+    ConsumeToken();
+    PatternGuard = ParseExpression();
+  }
+
     // '__' ':' statement
     //      ^
 
@@ -726,7 +739,7 @@ StmtResult Parser::ParseWildcardPattern(ParsedStmtContext StmtCtx) {
   if (SubStmt.isInvalid())
     SubStmt = Actions.ActOnNullStmt(ColonLoc);
 
-  return Actions.ActOnWildcardPattern(WilcardLoc, ColonLoc, SubStmt.get());
+  return Actions.ActOnWildcardPattern(WilcardLoc, ColonLoc, SubStmt.get(), PatternGuard.get());
 }
 
 StmtResult Parser::ParseIdentifierPattern(ParsedStmtContext StmtCtx) {
@@ -742,6 +755,13 @@ StmtResult Parser::ParseIdentifierPattern(ParsedStmtContext StmtCtx) {
   ExprResult Condition = Actions.ActOnBinOp(getCurScope(), IdentifierLocation,
     tok::TokenKind::equalequal, Identifier.get(), Inspect->getCond());
 
+  // there may be a pattern guard here
+  ExprResult PatternGuard;
+  if (Tok.is(tok::kw_if)) {
+    ConsumeToken();
+    PatternGuard = ParseExpression();
+  }
+
   // identifier ':' statement
   //            ^
   assert(Tok.is(tok::colon) && "Not an identifier pattern!");
@@ -756,7 +776,8 @@ StmtResult Parser::ParseIdentifierPattern(ParsedStmtContext StmtCtx) {
   if (SubStmt.isInvalid())
     SubStmt = Actions.ActOnNullStmt(ColonLoc);
 
-  return Actions.ActOnIdentifierPattern(IdentifierLocation, ColonLoc, Condition.get(), SubStmt.get());
+  return Actions.ActOnIdentifierPattern(IdentifierLocation, ColonLoc, Condition.get(), 
+                                        SubStmt.get(), PatternGuard.get());
 }
 
 StmtResult Parser::ParseExpressionPattern(ParsedStmtContext StmtCtx, Expr* ConstantExpr) {
@@ -768,6 +789,13 @@ StmtResult Parser::ParseExpressionPattern(ParsedStmtContext StmtCtx, Expr* Const
 
   ExprResult Condition = Actions.ActOnBinOp(getCurScope(), ExpressionLoc,
     tok::TokenKind::equalequal, ConstantExpr, Inspect->getCond());
+
+  // there may be a pattern guard here
+  ExprResult PatternGuard;
+  if (Tok.is(tok::kw_if)) {
+    ConsumeToken();
+    PatternGuard = ParseExpression();
+  }
 
   // constant-expression ':' statement
   //                     ^
@@ -783,7 +811,8 @@ StmtResult Parser::ParseExpressionPattern(ParsedStmtContext StmtCtx, Expr* Const
   if (SubStmt.isInvalid())
     SubStmt = Actions.ActOnNullStmt(ColonLoc);
 
-  return Actions.ActOnExpressionPattern(ExpressionLoc, ColonLoc, Condition.get(), SubStmt.get());
+  return Actions.ActOnExpressionPattern(ExpressionLoc, ColonLoc, Condition.get(), 
+                                        SubStmt.get(), PatternGuard.get());
 }
 
 /// ParseCaseStatement

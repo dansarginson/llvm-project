@@ -188,47 +188,53 @@ void InspectStmt::setConditionVariable(const ASTContext &Ctx, VarDecl *V) {
     DeclStmt(DeclGroupRef(V), VarRange.getBegin(), VarRange.getEnd());
 }
 
-WildcardPatternStmt *WildcardPatternStmt::Create(const ASTContext &Ctx,
-                                                 SourceLocation wildcardLoc, SourceLocation colonLoc) {
+WildcardPatternStmt *WildcardPatternStmt::Create(const ASTContext &Ctx, SourceLocation wildcardLoc, 
+                                                 SourceLocation colonLoc, Expr *patternGuard) {
+  bool hasPatternGuard = patternGuard != nullptr;
+
   void *Mem = Ctx.Allocate(
-    totalSizeToAlloc<Stmt *>(NumMandatoryStmtPtr),
+    totalSizeToAlloc<Stmt *, Expr *>(NumMandatoryStmtPtr, hasPatternGuard),
     alignof(WildcardPatternStmt));
-  return new (Mem) WildcardPatternStmt(wildcardLoc, colonLoc, nullptr);
+  return new (Mem) WildcardPatternStmt(wildcardLoc, colonLoc, nullptr, patternGuard);
 }
 
-WildcardPatternStmt *WildcardPatternStmt::CreateEmpty(const ASTContext &Ctx) {
+WildcardPatternStmt *WildcardPatternStmt::CreateEmpty(const ASTContext &Ctx, bool HasPatternGuard) {
   void *Mem = Ctx.Allocate(
-    totalSizeToAlloc<Stmt *>(NumMandatoryStmtPtr),
+    totalSizeToAlloc<Stmt *, Expr *>(NumMandatoryStmtPtr, HasPatternGuard),
     alignof(WildcardPatternStmt));
-  return new (Mem) WildcardPatternStmt(EmptyShell());
+  return new (Mem) WildcardPatternStmt(EmptyShell(), HasPatternGuard);
 }
 
-IdentifierPatternStmt *IdentifierPatternStmt::Create(const ASTContext &Ctx, 
-                                                     SourceLocation caseLoc, SourceLocation colonLoc) {
+IdentifierPatternStmt *IdentifierPatternStmt::Create(const ASTContext &Ctx, SourceLocation caseLoc,
+                                                     SourceLocation colonLoc, Expr *patternGuard) {
+  bool HasPatternGuard = patternGuard != nullptr;
+
   void *Mem = Ctx.Allocate(
-    totalSizeToAlloc<Stmt *>(NumMandatoryStmtPtr),
+    totalSizeToAlloc<Stmt *, Expr *>(NumMandatoryStmtPtr, HasPatternGuard),
     alignof(IdentifierPatternStmt));
-  return new (Mem) IdentifierPatternStmt(caseLoc, colonLoc, nullptr, nullptr);
+  return new (Mem) IdentifierPatternStmt(caseLoc, colonLoc, nullptr, nullptr, patternGuard);
 }
 
-IdentifierPatternStmt *IdentifierPatternStmt::CreateEmpty(const ASTContext &Ctx) {
+IdentifierPatternStmt *IdentifierPatternStmt::CreateEmpty(const ASTContext &Ctx, bool HasPatternGuard) {
   void *Mem = Ctx.Allocate(
-    totalSizeToAlloc<Stmt *>(NumMandatoryStmtPtr),
+    totalSizeToAlloc<Stmt *, Expr *>(NumMandatoryStmtPtr, HasPatternGuard),
     alignof(IdentifierPatternStmt));
-  return new (Mem) IdentifierPatternStmt(EmptyShell());
+  return new (Mem) IdentifierPatternStmt(EmptyShell(), HasPatternGuard);
 }
 
-ExpressionPatternStmt *ExpressionPatternStmt::Create(const ASTContext &Ctx,
-                                                     SourceLocation caseLoc, SourceLocation colonLoc) {
+ExpressionPatternStmt *ExpressionPatternStmt::Create(const ASTContext &Ctx, SourceLocation caseLoc, 
+                                                     SourceLocation colonLoc, Expr *patternGuard) {
+  bool hasPatternGuard = patternGuard != nullptr;
+
   void *Mem = Ctx.Allocate(
-    totalSizeToAlloc<Stmt *>(NumMandatoryStmtPtr),
+    totalSizeToAlloc<Stmt *, Expr *>(NumMandatoryStmtPtr, hasPatternGuard),
     alignof(ExpressionPatternStmt));
-  return new (Mem) ExpressionPatternStmt(caseLoc, colonLoc, nullptr, nullptr);
+  return new (Mem) ExpressionPatternStmt(caseLoc, colonLoc, nullptr, nullptr, patternGuard);
 }
 
-ExpressionPatternStmt *ExpressionPatternStmt::CreateEmpty(const ASTContext &Ctx) {
+ExpressionPatternStmt *ExpressionPatternStmt::CreateEmpty(const ASTContext &Ctx, bool HasPatternGuard) {
   void *Mem = Ctx.Allocate(
-    totalSizeToAlloc<Stmt *>(NumMandatoryStmtPtr),
+    totalSizeToAlloc<Stmt *, Expr *>(NumMandatoryStmtPtr, HasPatternGuard),
     alignof(ExpressionPatternStmt));
-  return new (Mem) ExpressionPatternStmt(EmptyShell());
+  return new (Mem) ExpressionPatternStmt(EmptyShell(), HasPatternGuard);
 }
