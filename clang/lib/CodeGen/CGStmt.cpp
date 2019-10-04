@@ -1756,6 +1756,12 @@ void CodeGenFunction::EmitInspectStmt(const InspectStmt &S) {
     return createBasicBlock(name);
   };
 
+  auto patternGuardCount = 0;
+  auto newPatternGuard = [&patternGuardCount, this]() {
+    auto name = llvm::join_items("", "pattern.guard", llvm::itostr(patternGuardCount++));
+    return createBasicBlock(name);
+  };
+
   llvm::BasicBlock* NextPatternTest = newPatternTest();
   while (PS) {
     auto *thisPattern = NextPatternTest;
@@ -1770,18 +1776,35 @@ void CodeGenFunction::EmitInspectStmt(const InspectStmt &S) {
       NextPatternTest = newPatternTest();
     }
 
+    auto const hasGuard = PS->hasPatternGuard();
+
     if (const auto *WPS = dyn_cast<WildcardPatternStmt>(PS)) {
       // we don't emit a "body" block for wildcard patterns
       // as the "test" block will do, and that's what we 
       // jump to from previous patterns
       EmitBlock(thisPattern);
+
+      if (hasGuard) {
+        EmitBranchOnBoolExpr(PS->getPatternGuard(), thisPattern, NextPatternTest, getProfileCount(PS->getSubStmt()));
+      }
+
       EmitStmt(WPS->getSubStmt());
       EmitBranch(ContBlock);
     }
     else if (const auto *IPS = dyn_cast<IdentifierPatternStmt>(PS)) {
       EmitBlock(thisPattern);
       auto *body = newPatternBody();
-      EmitBranchOnBoolExpr(IPS->getCond(), body, NextPatternTest, getProfileCount(PS->getSubStmt()));
+      
+      if (hasGuard) {
+        auto *guardBlock = newPatternGuard();
+        EmitBranchOnBoolExpr(IPS->getCond(), guardBlock, NextPatternTest, getProfileCount(PS->getSubStmt()));
+        EmitBlock(guardBlock);
+        EmitBranchOnBoolExpr(PS->getPatternGuard(), body, NextPatternTest, getProfileCount(PS->getSubStmt()));
+      }
+      else {
+        EmitBranchOnBoolExpr(IPS->getCond(), body, NextPatternTest, getProfileCount(PS->getSubStmt()));
+      }
+
       EmitBlock(body);
       EmitStmt(IPS->getSubStmt());
       EmitBranch(ContBlock);
@@ -1789,7 +1812,17 @@ void CodeGenFunction::EmitInspectStmt(const InspectStmt &S) {
     else if (const auto *EPS = dyn_cast<ExpressionPatternStmt>(PS)) {
       EmitBlock(thisPattern);
       auto *body = newPatternBody();
-      EmitBranchOnBoolExpr(EPS->getCond(), body, NextPatternTest, getProfileCount(PS->getSubStmt()));
+
+      if (hasGuard) {
+        auto *guardBlock = newPatternGuard();
+        EmitBranchOnBoolExpr(EPS->getCond(), guardBlock, NextPatternTest, getProfileCount(PS->getSubStmt()));
+        EmitBlock(guardBlock);
+        EmitBranchOnBoolExpr(PS->getPatternGuard(), body, NextPatternTest, getProfileCount(PS->getSubStmt()));
+      }
+      else {
+        EmitBranchOnBoolExpr(EPS->getCond(), body, NextPatternTest, getProfileCount(PS->getSubStmt()));
+      }
+
       EmitBlock(body);
       EmitStmt(EPS->getSubStmt());
       EmitBranch(ContBlock);

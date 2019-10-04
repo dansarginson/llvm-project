@@ -297,9 +297,16 @@ void ASTStmtReader::VisitInspectStmt(InspectStmt *S) {
 
 void ASTStmtReader::VisitPatternStmt(PatternStmt* S) {
   VisitStmt(S);
+
+  bool HasPatternGuard = Record.readInt();
+
   Record.recordInspectPatternID(S, Record.readInt());
   S->setPatternLoc(ReadSourceLocation());
   S->setColonLoc(ReadSourceLocation());
+
+  if (HasPatternGuard) {
+    S->setPatternGuard(Record.readSubExpr());
+  }
 }
 
 void ASTStmtReader::VisitWildcardPatternStmt(WildcardPatternStmt *S) {
@@ -2559,17 +2566,20 @@ Stmt *ASTReader::ReadStmtFromStream(ModuleFile &F) {
 
     case STMT_WILDCARDPATTERN:
       S = WildcardPatternStmt::CreateEmpty(
-        Context);
+        Context,
+        /* HasPatternGuard=*/Record[ASTStmtReader::NumStmtFields]);
       break;
 
     case STMT_IDENTIFIERPATTERN:
       S = IdentifierPatternStmt::CreateEmpty(
-        Context);
+        Context,
+        /* HasPatternGuard=*/Record[ASTStmtReader::NumStmtFields]);
       break;
 
     case STMT_EXPRESSIONPATTERN:
       S = ExpressionPatternStmt::CreateEmpty(
-        Context);
+        Context,
+        /* HasPatternGuard=*/Record[ASTStmtReader::NumStmtFields]);
       break;
 
     case STMT_WHILE:

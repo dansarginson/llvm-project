@@ -954,9 +954,15 @@ protected:
 
   class InspectPatternBitfields {
     friend class PatternStmt;
+    friend class WildcardPatternStmt;
     friend class IdentifierPatternStmt;
+    friend class ExpressionPatternStmt;
 
     unsigned : NumStmtBits;
+
+    /// Used by PatternStmt to discover whether a 
+    /// pattern statement has a pattern guard
+    unsigned PatternStmtHasPatternGuard : 1;
 
     /// The location of the '__' wildcard, identifier or
     /// constant expression.

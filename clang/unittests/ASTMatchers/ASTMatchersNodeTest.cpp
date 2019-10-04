@@ -1163,6 +1163,20 @@ TEST(PatternMatching, MatchesInspect) {
   EXPECT_TRUE(matchesConditionally("void x() { inspect(42) { 42:; } }", inspectStmt(), true, "-fpattern-matching"));
   EXPECT_TRUE(matchesConditionally("void x() { int y=0; inspect(42) { y:; } }", inspectStmt(), true, "-fpattern-matching"));
   EXPECT_TRUE(matchesConditionally("void x() { }", inspectStmt(), false, "-fpattern-matching"));
+
+  EXPECT_TRUE(matchesConditionally("void x() { struct A{int x;}; A a = {42}; inspect(a) { __:; } }", inspectStmt(), true, "-fpattern-matching"));
+  EXPECT_TRUE(matchesConditionally("void x() { struct A{int x; bool operator==(const A& other) { return x == other.x; } }; A a = {42}; A b = a; inspect(a) { b:; } }", inspectStmt(), true, "-fpattern-matching"));
+}
+
+TEST(PatternMatching, MatchesPattern) {
+  EXPECT_TRUE(matchesConditionally("void x() { inspect(42) { __:; } }", patternStmt(), true, "-fpattern-matching"));
+  EXPECT_TRUE(matchesConditionally("void x() { inspect(42) { 42:; } }", patternStmt(), true, "-fpattern-matching"));
+  EXPECT_TRUE(matchesConditionally("void x() { int y=0; inspect(42) { y:; } }", patternStmt(), true, "-fpattern-matching"));
+  EXPECT_TRUE(matchesConditionally("void x() { }", patternStmt(), false, "-fpattern-matching"));
+
+
+  EXPECT_TRUE(matchesConditionally("void x() { int a=42; inspect(42) { a if(true):; } }", patternStmt(), true, "-fpattern-matching"));
+  EXPECT_TRUE(matchesConditionally("void x() { inspect(42) { 42 if(true):; } }", patternStmt(), true, "-fpattern-matching"));
 }
 
 TEST(ExceptionHandling, SimpleCases) {

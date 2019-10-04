@@ -306,12 +306,18 @@ void StmtPrinter::VisitInspectStmt(InspectStmt *Node) {
 
 void StmtPrinter::VisitWildcardPatternStmt(WildcardPatternStmt *Node) {
   Indent() << "__ :" << NL;
+  if (Node->getPatternGuard()) {
+    PrintExpr(Node->getPatternGuard());
+  }
   PrintStmt(Node->getSubStmt(), 0);
 }
 
 void StmtPrinter::VisitIdentifierPatternStmt(IdentifierPatternStmt *Node) {
   Indent();
   PrintExpr(Node->getCond());
+  if (Node->getPatternGuard()) {
+    PrintExpr(Node->getPatternGuard());
+  }
   OS << " :" << NL;
   PrintStmt(Node->getSubStmt(), 0);
 }
@@ -319,6 +325,9 @@ void StmtPrinter::VisitIdentifierPatternStmt(IdentifierPatternStmt *Node) {
 void StmtPrinter::VisitExpressionPatternStmt(ExpressionPatternStmt *Node) {
   Indent();
   PrintExpr(Node->getCond());
+  if (Node->getPatternGuard()) {
+    PrintExpr(Node->getPatternGuard());
+  }
   OS << " :" << NL;
   PrintStmt(Node->getSubStmt(), 0);
 }
