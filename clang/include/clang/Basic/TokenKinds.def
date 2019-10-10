@@ -236,6 +236,9 @@ PUNCTUATOR(greatergreatergreater, ">>>")
 // CL support
 PUNCTUATOR(caretcaret,            "^^")
 
+// Pattern Matching support
+PUNCTUATOR(equalarrow,            "=>")
+
 // C99 6.4.1: Keywords.  These turn into kw_* tokens.
 // Flags allowed:
 //   KEYALL   - This is a keyword in all variants of C and C++, or it
@@ -396,6 +399,7 @@ CXX2A_KEYWORD(constinit             , 0)
 
 // C++ 2b / pattern matching keywords
 PATMAT_KEYWORD(inspect)
+PATMAT_KEYWORD(let)
 
 // C11 Extension
 KEYWORD(_Float16                    , KEYALL)
