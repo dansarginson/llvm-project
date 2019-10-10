@@ -81,6 +81,7 @@ class ModuleFileExtensionWriter;
 class NamedDecl;
 class NestedNameSpecifier;
 class ObjCInterfaceDecl;
+class PatternStmt;
 class PreprocessingRecord;
 class Preprocessor;
 struct QualifierInfo;
