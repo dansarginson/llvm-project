@@ -911,6 +911,126 @@ public:
   }
 };
 
+class BindingPatternStmt final
+  : public PatternStmt,
+  private llvm::TrailingObjects<IdentifierPatternStmt, Stmt *, Expr *> {
+  friend TrailingObjects;
+
+  // BindingPatternStmt is followed by several trailing objects.
+  //
+  // * A "Expr *" for the condition of the pattern statement. Always present.
+  //
+  // * A "Stmt *" for the substatement of the pattern statement. Always present.
+  //
+  // * An "Expr *" for the pattern guard. Optional.
+  //
+  enum { CondOffset = 0, PatternGuardOffset = 0, SubStmtOffsetFromCond = 1 };
+  enum { NumMandatoryStmtPtr = 2 };
+
+  unsigned condOffset() const { return CondOffset; }
+  unsigned subStmtOffset() const { return condOffset() + SubStmtOffsetFromCond; }
+  unsigned patternGuardOffset() const { return PatternGuardOffset; }
+
+  unsigned numTrailingObjects(OverloadToken<Stmt *>) const {
+    return NumMandatoryStmtPtr;
+  }
+
+  unsigned numTrailingObjects(OverloadToken<Expr*>) const {
+    return hasPatternGuard();
+  }
+
+public:
+
+  BindingPatternStmt(SourceLocation patternLoc, SourceLocation colonLoc, Expr *condition,
+    Stmt *substmt, Expr *patternGuard)
+    : PatternStmt(BindingPatternStmtClass, patternLoc, colonLoc) {
+    setSubStmt(substmt);
+    setCond(condition);
+
+    bool HasPatternGuard = patternGuard != nullptr;
+    InspectPatternBits.PatternStmtHasPatternGuard = HasPatternGuard;
+    if (HasPatternGuard) {
+      setPatternGuard(patternGuard);
+    }
+  }
+
+  /// Build an empty binding pattern statement.
+  explicit BindingPatternStmt(EmptyShell Empty, bool HasPatternGuard)
+    : PatternStmt(BindingPatternStmtClass, Empty) {
+    InspectPatternBits.PatternStmtHasPatternGuard = HasPatternGuard;
+  }
+
+  /// Build a binding pattern statement.
+  static BindingPatternStmt *Create(const ASTContext &Ctx, SourceLocation patternLoc,
+    SourceLocation colonLoc, Expr *patternGuard);
+
+  /// Build an empty binding pattern statement.
+  static BindingPatternStmt *CreateEmpty(const ASTContext &Ctx, bool HasPatternGuard);
+
+  SourceLocation getIdentifierLoc() const { return getPatternLoc(); }
+  void setIdentifierLoc(SourceLocation L) { setPatternLoc(L); }
+
+  Expr* getCond() {
+    return reinterpret_cast<Expr*>(getTrailingObjects<Stmt*>()[condOffset()]);
+  }
+
+  const Expr* getCond() const {
+    return reinterpret_cast<Expr*>(getTrailingObjects<Stmt*>()[condOffset()]);
+  }
+
+  void setCond(Expr* Val) {
+    getTrailingObjects<Stmt*>()[condOffset()] = reinterpret_cast<Stmt*>(Val);
+  }
+
+  Stmt *getSubStmt() { return getTrailingObjects<Stmt *>()[subStmtOffset()]; }
+  const Stmt *getSubStmt() const {
+    return getTrailingObjects<Stmt *>()[subStmtOffset()];
+  }
+
+  void setSubStmt(Stmt *S) {
+    getTrailingObjects<Stmt *>()[subStmtOffset()] = S;
+  }
+
+  Expr *getPatternGuard() { return getTrailingObjects<Expr*>()[patternGuardOffset()]; }
+
+  const Expr *getPatternGuard() const {
+    return getTrailingObjects<Expr*>()[patternGuardOffset()];
+  }
+
+  void setPatternGuard(Expr *S) {
+    getTrailingObjects<Expr*>()[patternGuardOffset()] = S;
+  }
+
+  bool hasPatternGuard() const { return InspectPatternBits.PatternStmtHasPatternGuard; }
+
+  SourceLocation getBeginLoc() const { return getIdentifierLoc(); }
+  SourceLocation getEndLoc() const LLVM_READONLY {
+    // Handle deeply nested binding pattern statements with iteration instead of recursion.
+    const PatternStmt *CS = this;
+    while (const auto *CS2 = dyn_cast<PatternStmt>(CS->getSubStmt()))
+      CS = CS2;
+
+    return CS->getSubStmt()->getEndLoc();
+  }
+
+  static bool classof(const Stmt *T) {
+    return T->getStmtClass() == BindingPatternStmtClass;
+  }
+
+  // Iterators
+  child_range children() {
+    return child_range(getTrailingObjects<Stmt *>(),
+      getTrailingObjects<Stmt *>() +
+      numTrailingObjects(OverloadToken<Stmt *>()));
+  }
+
+  const_child_range children() const {
+    return const_child_range(getTrailingObjects<Stmt *>(),
+      getTrailingObjects<Stmt *>() +
+      numTrailingObjects(OverloadToken<Stmt *>()));
+  }
+};
+
 SourceLocation PatternStmt::getEndLoc() const {
   if (const auto *WP = dyn_cast<WildcardPatternStmt>(this))
     return WP->getEndLoc();
@@ -918,9 +1038,12 @@ SourceLocation PatternStmt::getEndLoc() const {
     return IP->getEndLoc();
   else if (const auto *EP = dyn_cast<ExpressionPatternStmt>(this))
     return EP->getEndLoc();
+  else if (auto *BP = dyn_cast<BindingPatternStmt>(this))
+    return BP->getEndLoc();
 
-  llvm_unreachable("PatternStmt is neither a WildcardPatternStmt nor"
-                   "a IdentifierPatternStmt, nor a ExpressionPatternStmt!");
+  llvm_unreachable("PatternStmt is neither a WildcardPatternStmt nor "
+    "a IdentifierPatternStmt, nor a ExpressionPatternStmt, nor a "
+    "BindingPatternStmt!");
 }
 
 Stmt *PatternStmt::getSubStmt() {
@@ -930,9 +1053,12 @@ Stmt *PatternStmt::getSubStmt() {
     return IP->getSubStmt();
   else if (auto *EP = dyn_cast<ExpressionPatternStmt>(this))
     return EP->getSubStmt();
+  else if (auto *BP = dyn_cast<BindingPatternStmt>(this))
+    return BP->getSubStmt();
 
-  llvm_unreachable("PatternStmt is neither a WildcardPatternStmt nor"
-    "a IdentifierPatternStmt, nor a ExpressionPatternStmt!");
+  llvm_unreachable("PatternStmt is neither a WildcardPatternStmt nor "
+    "a IdentifierPatternStmt, nor a ExpressionPatternStmt, nor a " 
+    "BindingPatternStmt!");
 }
 
 bool PatternStmt::hasPatternGuard() const {
@@ -942,9 +1068,12 @@ bool PatternStmt::hasPatternGuard() const {
     return IP->hasPatternGuard();
   else if (auto *EP = dyn_cast<ExpressionPatternStmt>(this))
     return EP->hasPatternGuard();
+  else if (auto *BP = dyn_cast<BindingPatternStmt>(this))
+    return BP->hasPatternGuard();
 
-  llvm_unreachable("PatternStmt is neither a WildcardPatternStmt nor"
-    "a IdentifierPatternStmt, nor a ExpressionPatternStmt!");
+  llvm_unreachable("PatternStmt is neither a WildcardPatternStmt nor "
+    "a IdentifierPatternStmt, nor a ExpressionPatternStmt, nor a "
+    "BindingPatternStmt!");
 }
 
 Expr *PatternStmt::getPatternGuard() {
@@ -954,9 +1083,12 @@ Expr *PatternStmt::getPatternGuard() {
     return IP->getPatternGuard();
   else if (auto *EP = dyn_cast<ExpressionPatternStmt>(this))
     return EP->getPatternGuard();
+  else if (auto *BP = dyn_cast<BindingPatternStmt>(this))
+    return BP->getPatternGuard();
 
-  llvm_unreachable("PatternStmt is neither a WildcardPatternStmt nor"
-    "a IdentifierPatternStmt, nor a ExpressionPatternStmt!");
+  llvm_unreachable("PatternStmt is neither a WildcardPatternStmt nor "
+    "a IdentifierPatternStmt, nor a ExpressionPatternStmt, nor a "
+    "BindingPatternStmt!");
 }
 
 void PatternStmt::setPatternGuard(Expr *PatternGuard) {
@@ -966,9 +1098,12 @@ void PatternStmt::setPatternGuard(Expr *PatternGuard) {
     IP->setPatternGuard(PatternGuard);
   else if (auto *EP = dyn_cast<ExpressionPatternStmt>(this))
     EP->setPatternGuard(PatternGuard);
+  else if (auto *BP = dyn_cast<BindingPatternStmt>(this))
+    BP->setPatternGuard(PatternGuard);
 
-  llvm_unreachable("PatternStmt is neither a WildcardPatternStmt nor"
-    "a IdentifierPatternStmt, nor a ExpressionPatternStmt!");
+  llvm_unreachable("PatternStmt is neither a WildcardPatternStmt nor "
+    "a IdentifierPatternStmt, nor a ExpressionPatternStmt, nor a "
+    "BindingPatternStmt!");
 }
 
 /// InspectStmt - This represents an 'inspect' stmt.

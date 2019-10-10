@@ -300,9 +300,10 @@ public:
   void VisitIfStmt(const IfStmt *IS);
   void VisitSwitchStmt(const SwitchStmt *SS);
   void VisitInspectStmt(const InspectStmt *IS);
-  void VisitWildcardPatrternStmt(const WildcardPatternStmt *WPS);
+  void VisitWildcardPatternStmt(const WildcardPatternStmt *WPS);
   void VisitIdentifierPatternStmt(const IdentifierPatternStmt *IPS);
   void VisitExpressionPatternStmt(const ExpressionPatternStmt *EPS);
+  void VisitBindingPatternStmt(const BindingPatternStmt *BPS);
   void VisitCaseStmt(const CaseStmt *CS);
   void VisitLabelStmt(const LabelStmt *LS);
   void VisitGotoStmt(const GotoStmt *GS);

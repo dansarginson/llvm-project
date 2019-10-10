@@ -711,6 +711,7 @@ const internal::VariadicDynCastAllOfMatcher<Stmt, PatternStmt> patternStmt;
 const internal::VariadicDynCastAllOfMatcher<Stmt, WildcardPatternStmt> wildcardPatternStmt;
 const internal::VariadicDynCastAllOfMatcher<Stmt, IdentifierPatternStmt> identifierPatternStmt;
 const internal::VariadicDynCastAllOfMatcher<Stmt, ExpressionPatternStmt> expressionPatternStmt;
+const internal::VariadicDynCastAllOfMatcher<Stmt, BindingPatternStmt> bindingPatternStmt;
 const internal::VariadicDynCastAllOfMatcher<Stmt, CompoundStmt> compoundStmt;
 const internal::VariadicDynCastAllOfMatcher<Stmt, CXXCatchStmt> cxxCatchStmt;
 const internal::VariadicDynCastAllOfMatcher<Stmt, CXXTryStmt> cxxTryStmt;

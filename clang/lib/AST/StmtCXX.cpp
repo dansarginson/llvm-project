@@ -238,3 +238,20 @@ ExpressionPatternStmt *ExpressionPatternStmt::CreateEmpty(const ASTContext &Ctx,
     alignof(ExpressionPatternStmt));
   return new (Mem) ExpressionPatternStmt(EmptyShell(), HasPatternGuard);
 }
+
+BindingPatternStmt *BindingPatternStmt::Create(const ASTContext &Ctx, SourceLocation caseLoc,
+  SourceLocation colonLoc, Expr *patternGuard) {
+  bool HasPatternGuard = patternGuard != nullptr;
+
+  void *Mem = Ctx.Allocate(
+    totalSizeToAlloc<Stmt *, Expr *>(NumMandatoryStmtPtr, HasPatternGuard),
+    alignof(BindingPatternStmt));
+  return new (Mem) BindingPatternStmt(caseLoc, colonLoc, nullptr, nullptr, patternGuard);
+}
+
+BindingPatternStmt *BindingPatternStmt::CreateEmpty(const ASTContext &Ctx, bool HasPatternGuard) {
+  void *Mem = Ctx.Allocate(
+    totalSizeToAlloc<Stmt *, Expr *>(NumMandatoryStmtPtr, HasPatternGuard),
+    alignof(BindingPatternStmt));
+  return new (Mem) BindingPatternStmt(EmptyShell(), HasPatternGuard);
+}

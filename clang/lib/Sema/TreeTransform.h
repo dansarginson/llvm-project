@@ -6886,6 +6886,12 @@ TreeTransform<Derived>::TransformExpressionPatternStmt(ExpressionPatternStmt *S)
 
 template<typename Derived>
 StmtResult
+TreeTransform<Derived>::TransformBindingPatternStmt(BindingPatternStmt *S) {
+  return StmtError();
+}
+
+template<typename Derived>
+StmtResult
 TreeTransform<Derived>::TransformWhileStmt(WhileStmt *S) {
   // Transform the condition
   Sema::ConditionResult Cond = getDerived().TransformCondition(

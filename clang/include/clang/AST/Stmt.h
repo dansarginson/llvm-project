@@ -957,6 +957,7 @@ protected:
     friend class WildcardPatternStmt;
     friend class IdentifierPatternStmt;
     friend class ExpressionPatternStmt;
+    friend class BindingPatternStmt;
 
     unsigned : NumStmtBits;
 

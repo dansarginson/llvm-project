@@ -2081,6 +2081,16 @@ extern const internal::VariadicDynCastAllOfMatcher<Stmt, IdentifierPatternStmt> 
 ///   matches '0:'.
 extern const internal::VariadicDynCastAllOfMatcher<Stmt, ExpressionPatternStmt> expressionPatternStmt;
 
+/// Matches binding pattern statements inside inspect statements.
+///
+/// Given
+/// \code
+///   inspect(a) { let b: x(); let 0: y(); __: z() }
+/// \endcode
+/// bindingPatternStmt()
+///   matches 'let b:' and 'let 0:'.
+extern const internal::VariadicDynCastAllOfMatcher<Stmt, BindingPatternStmt> bindingPatternStmt;
+
 /// Matches compound statements.
 ///
 /// Example matches '{}' and '{{}}' in 'for (;;) {{}}'

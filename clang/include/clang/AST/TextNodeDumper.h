@@ -230,6 +230,7 @@ public:
   void VisitWildcardPatrternStmt(const WildcardPatternStmt *Node);
   void VisitIdentifierPatternStmt(const IdentifierPatternStmt *Node);
   void VisitExpressionPatternStmt(const ExpressionPatternStmt *Node);
+  void VisitBindingPatternStmt(const BindingPatternStmt *Node);
   void VisitWhileStmt(const WhileStmt *Node);
   void VisitLabelStmt(const LabelStmt *Node);
   void VisitGotoStmt(const GotoStmt *Node);

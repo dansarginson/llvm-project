@@ -680,6 +680,9 @@ void TextNodeDumper::VisitIdentifierPatternStmt(const IdentifierPatternStmt *Nod
 void TextNodeDumper::VisitExpressionPatternStmt(const ExpressionPatternStmt *Node) {
 }
 
+void TextNodeDumper::VisitBindingPatternStmt(const BindingPatternStmt *Node) {
+}
+
 void TextNodeDumper::VisitWhileStmt(const WhileStmt *Node) {
   if (Node->hasVarStorage())
     OS << " has_var";

@@ -518,6 +518,7 @@ namespace clang {
     ExpectedStmt VisitWildcardPatternStmt(WildcardPatternStmt *S);
     ExpectedStmt VisitIdentifierPatternStmt(IdentifierPatternStmt *S);
     ExpectedStmt VisitExpressionPatternStmt(ExpressionPatternStmt *S);
+    ExpectedStmt VisitBindingPatternStmt(BindingPatternStmt *S);
     ExpectedStmt VisitWhileStmt(WhileStmt *S);
     ExpectedStmt VisitDoStmt(DoStmt *S);
     ExpectedStmt VisitForStmt(ForStmt *S);
@@ -6029,6 +6030,25 @@ ExpectedStmt ASTNodeImporter::VisitExpressionPatternStmt(ExpressionPatternStmt *
   auto *ToStmt = ExpressionPatternStmt::Create(Importer.getToContext(), ToPatternLoc, 
                                                ToColonLoc, ToPatternGuard);
   ToStmt->setCond(ToCondition);
+  ToStmt->setSubStmt(ToSubStmt);
+
+  return ToStmt;
+}
+
+ExpectedStmt ASTNodeImporter::VisitBindingPatternStmt(BindingPatternStmt *S) {
+  auto Imp = importSeq(S->getCond(), S->getSubStmt(), S->getPatternLoc(), S->getColonLoc(), S->getPatternGuard());
+  if (!Imp)
+    return Imp.takeError();
+
+  Expr *ToCond;
+  Stmt *ToSubStmt;
+  SourceLocation ToPatternLoc, ToColonLoc;
+  Expr *ToPatternGuard;
+  std::tie(ToCond, ToSubStmt, ToPatternLoc, ToColonLoc, ToPatternGuard) = *Imp;
+
+  auto *ToStmt = BindingPatternStmt::Create(Importer.getToContext(), ToPatternLoc,
+    ToColonLoc, ToPatternGuard);
+  ToStmt->setCond(ToCond);
   ToStmt->setSubStmt(ToSubStmt);
 
   return ToStmt;

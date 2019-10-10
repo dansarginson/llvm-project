@@ -239,6 +239,13 @@ void ASTStmtWriter::VisitExpressionPatternStmt(ExpressionPatternStmt *S) {
   Code = serialization::STMT_EXPRESSIONPATTERN;
 }
 
+void ASTStmtWriter::VisitBindingPatternStmt(BindingPatternStmt *S) {
+  VisitPatternStmt(S);
+  Record.AddStmt(S->getCond());
+  Record.AddStmt(S->getSubStmt());
+  Code = serialization::STMT_BINDINGPATTERN;
+}
+
 void ASTStmtWriter::VisitWhileStmt(WhileStmt *S) {
   VisitStmt(S);
 
