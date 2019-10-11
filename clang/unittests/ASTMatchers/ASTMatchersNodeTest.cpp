@@ -1177,6 +1177,10 @@ TEST(PatternMatching, MatchesPattern) {
 
   EXPECT_TRUE(matchesConditionally("void x() { int a=42; inspect(42) { a if(true):; } }", patternStmt(), true, "-fpattern-matching"));
   EXPECT_TRUE(matchesConditionally("void x() { inspect(42) { 42 if(true):; } }", patternStmt(), true, "-fpattern-matching"));
+
+
+  EXPECT_TRUE(matchesConditionally("void x() { int x[3]; auto &[a,b,c] = x; }", patternStmt(), true, "-fpattern-matching"));
+  EXPECT_TRUE(matchesConditionally("void x() { inspect(42) { let y=42 :; } }", patternStmt(), true, "-fpattern-matching"));
 }
 
 TEST(ExceptionHandling, SimpleCases) {

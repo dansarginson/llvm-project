@@ -222,6 +222,11 @@ Retry:
     LLVM_FALLTHROUGH;
   }
 
+  case tok::kw_let:
+    if (getCurScope()->isInspectScope()) {
+      return ParsePatternStatement(Attrs, StmtCtx);
+    }
+
   default: {
     if ((getLangOpts().CPlusPlus || getLangOpts().MicrosoftExt ||
          (StmtCtx & ParsedStmtContext::AllowDeclarationsInC) !=
@@ -686,11 +691,17 @@ StmtResult Parser::ParseLabeledStatement(ParsedAttributesWithRange &attrs,
 ///         __ ':' statement
 ///         identifier ':' statement
 ///         constant-expression ':' statement
+///         let identifier = pattern ':' statement
 ///
 StmtResult Parser::ParsePatternStatement(ParsedAttributesWithRange &attrs,
                                          ParsedStmtContext StmtCtx) {
   // we parse expression patterns in ParseExprStatement,
   // where they get distinguished from case statements
+
+  if (Tok.is(tok::kw_let)) {
+    return ParseBindingPattern(StmtCtx);
+  }
+
   if (!Tok.is(tok::identifier)) {
     return StmtError();
   }
@@ -782,7 +793,6 @@ StmtResult Parser::ParseIdentifierPattern(ParsedStmtContext StmtCtx) {
 
 StmtResult Parser::ParseExpressionPattern(ParsedStmtContext StmtCtx, Expr* ConstantExpr) {
 
-
   SourceLocation ExpressionLoc = Tok.getLocation();
 
   InspectStmt* Inspect = Actions.getCurFunction()->InspectStack.back().getPointer();
@@ -813,6 +823,33 @@ StmtResult Parser::ParseExpressionPattern(ParsedStmtContext StmtCtx, Expr* Const
 
   return Actions.ActOnExpressionPattern(ExpressionLoc, ColonLoc, Condition.get(), 
                                         SubStmt.get(), PatternGuard.get());
+}
+
+StmtResult Parser::ParseBindingPattern(ParsedStmtContext StmtCtx) {
+  assert((Tok.is(tok::kw_let)) && "Not a binding pattern!");
+
+  // let identifier [= pattern] ':' statement
+  // ^
+  SourceLocation LetLocation = ConsumeToken();
+
+  // let identifier [= pattern] ':' statement
+  //     ^
+  SourceLocation IdentifierLocation = Tok.getLocation();
+  ExprResult Identifier = ParseExpression();
+
+  InspectStmt* Inspect = Actions.getCurFunction()->InspectStack.back().getPointer();
+
+  ExprResult Condition = Actions.ActOnBinOp(getCurScope(), IdentifierLocation,
+    tok::TokenKind::equalequal, Identifier.get(), Inspect->getCond());
+
+  // there may be a pattern guard here
+  ExprResult PatternGuard;
+  if (Tok.is(tok::kw_if)) {
+    ConsumeToken();
+    PatternGuard = ParseExpression();
+  }
+
+  return StmtError();
 }
 
 /// ParseCaseStatement
