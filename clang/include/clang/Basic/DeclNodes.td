@@ -39,6 +39,7 @@ def Named : Decl<"named declarations", 1>;
     def EnumConstant : DDecl<Value, "enumerators">;
     def UnresolvedUsingValue : DDecl<Value>;
     def IndirectField : DDecl<Value>;
+    def BindingPattern : DDecl<Value>;
     def Binding : DDecl<Value>;
     def OMPDeclareReduction : DDecl<Value>, DeclContext;
     def OMPDeclareMapper : DDecl<Value>, DeclContext;

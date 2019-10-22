@@ -2955,6 +2955,17 @@ StaticAssertDecl *StaticAssertDecl::CreateDeserialized(ASTContext &C,
                                       nullptr, SourceLocation(), false);
 }
 
+void BindingPatternDecl::anchor() {}
+
+BindingPatternDecl *BindingPatternDecl::Create(ASTContext &C, DeclContext *DC,
+  SourceLocation IdLoc, IdentifierInfo *Id) {
+  return new (C, DC) BindingPatternDecl(DC, IdLoc, Id);
+}
+
+BindingPatternDecl *BindingPatternDecl::CreateDeserialized(ASTContext &C, unsigned ID) {
+  return new (C, ID) BindingPatternDecl(nullptr, SourceLocation(), nullptr);
+}
+
 void BindingDecl::anchor() {}
 
 BindingDecl *BindingDecl::Create(ASTContext &C, DeclContext *DC,

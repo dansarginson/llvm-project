@@ -1949,6 +1949,11 @@ DEF_TRAVERSE_DECL(DecompositionDecl, {
   }
 })
 
+DEF_TRAVERSE_DECL(BindingPatternDecl, {
+  if (getDerived().shouldVisitImplicitCode())
+    TRY_TO(TraverseStmt(D->getBinding()));
+})
+
 DEF_TRAVERSE_DECL(BindingDecl, {
   if (getDerived().shouldVisitImplicitCode())
     TRY_TO(TraverseStmt(D->getBinding()));

@@ -3868,6 +3868,51 @@ public:
   static bool classofKind(Kind K) { return K == StaticAssert; }
 };
 
+/// A binding pattern 'let' declaration in an inspect(). For instance, given:
+///
+///   int two = 2;
+///   inspect(two) {
+///     let my_two = two : ;   
+///   }
+///
+/// my_two is a BindingPatternDecl, whose binding is the expression two
+class BindingPatternDecl : public ValueDecl {
+
+  /// The binding represented by this declaration. References to this
+  /// declaration are effectively equivalent to this expression (except
+  /// that it is only evaluated once at the point of declaration of the
+  /// binding).
+  Expr *Binding = nullptr;
+
+  BindingPatternDecl(DeclContext *DC, SourceLocation IdLoc, IdentifierInfo *Id)
+    : ValueDecl(Decl::BindingPattern, DC, IdLoc, Id, QualType()) {}
+
+  void anchor() override;
+
+public:
+  friend class ASTDeclReader;
+
+  static BindingPatternDecl *Create(ASTContext &C, DeclContext *DC,
+    SourceLocation IdLoc, IdentifierInfo *Id);
+  static BindingPatternDecl *CreateDeserialized(ASTContext &C, unsigned ID);
+
+  /// Get the expression to which this declaration is bound. This may be null
+  /// in two different cases: while parsing the initializer for the
+  /// decomposition declaration, and when the initializer is type-dependent.
+  Expr *getBinding() const { return Binding; }
+
+  /// Set the binding for this BindingDecl, along with its declared type (which
+  /// should be a possibly-cv-qualified form of the type of the binding, or a
+  /// reference to such a type).
+  void setBinding(QualType DeclaredType, Expr *Binding) {
+    setType(DeclaredType);
+    this->Binding = Binding;
+  }
+
+  static bool classof(const Decl *D) { return classofKind(D->getKind()); }
+  static bool classofKind(Kind K) { return K == Decl::BindingPattern; }
+};
+
 /// A binding in a decomposition declaration. For instance, given:
 ///
 ///   int n[3];
