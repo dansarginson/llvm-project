@@ -183,19 +183,7 @@ Retry:
     Token Next = NextToken();
     if (Next.is(tok::colon)) { // C99 6.8.1: labeled-statement
       // identifier ':' statement
-
-      // detect whether we're pattern matching
-      if (getCurScope()->isInspectScope()) {
-        return ParsePatternStatement(Attrs, StmtCtx);
-      }
-
       return ParseLabeledStatement(Attrs, StmtCtx);
-    }
-
-    if (Next.is(tok::kw_if)) { 
-      if (getCurScope()->isInspectScope()) {
-        return ParsePatternStatement(Attrs, StmtCtx);
-      }
     }
 
     // Look up the identifier, and typo-correct it to a keyword if it's not
@@ -271,8 +259,7 @@ Retry:
   case tok::kw_switch:              // C99 6.8.4.2: switch-statement
     return ParseSwitchStatement(TrailingElseLoc);
   case tok::kw_inspect:              // C++ Pattern Matching: inspect-statement
-    return ParseInspectStatement(TrailingElseLoc);
-
+    return ParseInspectStatement(Attrs, StmtCtx, TrailingElseLoc);
   case tok::kw_while:               // C99 6.8.5.1: while-statement
     return ParseWhileStatement(TrailingElseLoc);
   case tok::kw_do:                  // C99 6.8.5.2: do-statement
@@ -468,12 +455,6 @@ StmtResult Parser::ParseExprStatement(ParsedStmtContext StmtCtx) {
     // Recover parsing as a case statement.
     return ParseCaseStatement(StmtCtx, /*MissingCase=*/true, Expr);
   }
-
-  if ((Tok.is(tok::colon) || (Tok.is(tok::kw_if))) && getCurScope()->isInspectScope()) {
-    // Recover parsing as an expression pattern.
-    return ParseExpressionPattern(StmtCtx, Expr.get());
-  }
-
   // Otherwise, eat the semicolon.
   ExpectAndConsumeSemi(diag::err_expected_semi_after_expr);
   return handleExprStmt(Expr, StmtCtx);
@@ -689,10 +670,13 @@ StmtResult Parser::ParseLabeledStatement(ParsedAttributesWithRange &attrs,
 ///
 StmtResult Parser::ParsePatternStatement(ParsedAttributesWithRange &attrs,
                                          ParsedStmtContext StmtCtx) {
-  // we parse expression patterns in ParseExprStatement,
-  // where they get distinguished from case statements
   if (!Tok.is(tok::identifier)) {
-    return StmtError();
+    ExprResult Expr(ParseExpression());
+
+    if ((Tok.is(tok::colon) || (Tok.is(tok::kw_if))) && getCurScope()->isInspectScope()) {
+      // Recover parsing as an expression pattern.
+      return ParseExpressionPattern(StmtCtx, Expr.get());
+    }
   }
 
   // yuck, is there a better way to tell '__'
@@ -1588,7 +1572,9 @@ StmtResult Parser::ParseSwitchStatement(SourceLocation *TrailingElseLoc) {
 /// ParseInspectStatement
 ///       inspect-statement:
 /// [C++]   'inspect' '(' condition ')' statement
-StmtResult Parser::ParseInspectStatement(SourceLocation *TrailingElseLoc) {
+StmtResult Parser::ParseInspectStatement(ParsedAttributesWithRange &attrs,
+                                         ParsedStmtContext StmtCtx, 
+                                         SourceLocation *TrailingElseLoc) {
   assert(Tok.is(tok::kw_inspect) && "Not an inspect stmt!");
   SourceLocation InspectLoc = ConsumeToken();  // eat the 'inspect'.
 
@@ -1629,16 +1615,23 @@ StmtResult Parser::ParseInspectStatement(SourceLocation *TrailingElseLoc) {
   // condition and a new scope for substatement in C++.
   ParseScope InnerScope(this, Scope::DeclScope, true, Tok.is(tok::l_brace));
 
-  getCurScope()->decrementMSManglingNumber();
+  // consume opening brace
+  ConsumeBrace();
+  
+  StmtResult Pattern = ParsePatternStatement(attrs, StmtCtx);
+  while (!Pattern.isInvalid() && !Tok.is(tok::r_brace)) {
 
-  // Read the body statement.
-  StmtResult Body(ParseStatement(TrailingElseLoc));
+    Pattern = ParsePatternStatement(attrs, StmtCtx);
+  }
+
+  // consume closing brace
+  ConsumeBrace();
 
   // Pop the scopes.
   InnerScope.Exit();
   InspectScope.Exit();
 
-  return Actions.ActOnFinishInspectStmt(InspectLoc, Inspect.get(), Body.get());
+  return Actions.ActOnFinishInspectStmt(InspectLoc, Inspect.get());
 }
 
 /// ParseWhileStatement

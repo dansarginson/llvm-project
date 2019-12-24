@@ -275,7 +275,6 @@ void ASTStmtReader::VisitInspectStmt(InspectStmt *S) {
   bool HasVar = Record.readInt();
 
   S->setCond(Record.readSubExpr());
-  S->setBody(Record.readSubStmt());
   if (HasInit)
     S->setInit(Record.readSubStmt());
   if (HasVar)

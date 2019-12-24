@@ -136,7 +136,6 @@ InspectStmt::InspectStmt(const ASTContext &Ctx, Stmt *Init,
   InspectStmtBits.HasVar = HasVar;
 
   setCond(Cond);
-  setBody(nullptr);
   if (HasInit)
     setInit(Init);
   if (HasVar)

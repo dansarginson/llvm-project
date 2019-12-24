@@ -190,7 +190,6 @@ void ASTStmtWriter::VisitInspectStmt(InspectStmt *S) {
   Record.push_back(HasVar);
 
   Record.AddStmt(S->getCond());
-  Record.AddStmt(S->getBody());
   if (HasInit)
     Record.AddStmt(S->getInit());
   if (HasVar)

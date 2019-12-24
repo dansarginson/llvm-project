@@ -817,8 +817,7 @@ StmtResult Sema::ActOnStartOfInspectStmt(SourceLocation InspectLoc, Stmt *InitSt
 }
 
 StmtResult
-Sema::ActOnFinishInspectStmt(SourceLocation InspectLoc, Stmt *Inspect,
-                             Stmt *BodyStmt) {
+Sema::ActOnFinishInspectStmt(SourceLocation InspectLoc, Stmt *Inspect) {
 
   InspectStmt *IS = cast<InspectStmt>(Inspect);
   assert(IS == getCurFunction()->InspectStack.back().getPointer() &&
@@ -826,15 +825,8 @@ Sema::ActOnFinishInspectStmt(SourceLocation InspectLoc, Stmt *Inspect,
 
   getCurFunction()->InspectStack.pop_back();
 
-  if (!BodyStmt) return StmtError();
-  IS->setBody(BodyStmt, InspectLoc);
-
   Expr *CondExpr = IS->getCond();
   if (!CondExpr) return StmtError();
-
-  if (BodyStmt)
-    DiagnoseEmptyStmtBody(CondExpr->getEndLoc(), BodyStmt,
-      diag::warn_empty_switch_body);
 
   return IS;
 }

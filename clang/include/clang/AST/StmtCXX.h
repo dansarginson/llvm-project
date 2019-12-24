@@ -1046,15 +1046,6 @@ public:
     getTrailingObjects<Stmt *>()[condOffset()] = reinterpret_cast<Stmt *>(Cond);
   }
 
-  Stmt *getBody() { return getTrailingObjects<Stmt *>()[bodyOffset()]; }
-  const Stmt *getBody() const {
-    return getTrailingObjects<Stmt *>()[bodyOffset()];
-  }
-
-  void setBody(Stmt *Body) {
-    getTrailingObjects<Stmt *>()[bodyOffset()] = Body;
-  }
-
   Stmt *getInit() {
     return hasInitStorage() ? getTrailingObjects<Stmt *>()[initOffset()]
       : nullptr;
@@ -1110,11 +1101,6 @@ public:
   SourceLocation getInspectLoc() const { return InspectStmtBits.InspectLoc; }
   void setInspectLoc(SourceLocation L) { InspectStmtBits.InspectLoc = L; }
 
-  void setBody(Stmt *S, SourceLocation SL) {
-    setBody(S);
-    setInspectLoc(SL);
-  }
-
   void addPattern(PatternStmt *SC) {
      assert(!SC->getNextPattern() &&
        "pattern already added to an inspect");
@@ -1134,9 +1120,17 @@ public:
   }
 
   SourceLocation getBeginLoc() const { return getInspectLoc(); }
-  SourceLocation getEndLoc() const LLVM_READONLY {
-    return getBody() ? getBody()->getEndLoc()
-      : reinterpret_cast<const Stmt *>(getCond())->getEndLoc();
+  SourceLocation getEndLoc() const LLVM_READONLY { 
+    // I guess this gives us the end of the final pattern,
+    // when the location of the closing r_brace might be better.
+
+    // iterate to the (current) end of the linked list
+    PatternStmt*current = FirstPattern;
+    while (current->getNextPattern()) {
+      current = current->getNextPattern();
+    }
+
+    return current->getEndLoc();
   }
 
   // Iterators

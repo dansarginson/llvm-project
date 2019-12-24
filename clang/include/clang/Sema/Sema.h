@@ -3992,8 +3992,7 @@ public:
   StmtResult ActOnStartOfInspectStmt(SourceLocation InspectLoc,
                                      Stmt *InitStmt,
                                      ConditionResult Cond);
-  StmtResult ActOnFinishInspectStmt(SourceLocation InspectLoc,
-                                    Stmt *Inspect, Stmt *Body);
+  StmtResult ActOnFinishInspectStmt(SourceLocation InspectLoc, Stmt *Inspect);
   StmtResult ActOnWhileStmt(SourceLocation WhileLoc, ConditionResult Cond,
                             Stmt *Body);
   StmtResult ActOnDoStmt(SourceLocation DoLoc, Stmt *Body,
