@@ -1937,6 +1937,12 @@ private:
   StmtResult ParseWildcardPattern(ParsedStmtContext StmtCtx);
   StmtResult ParseIdentifierPattern(ParsedStmtContext StmtCtx);
   StmtResult ParseExpressionPattern(ParsedStmtContext StmtCtx, Expr *Condition);
+  StmtResult ParseStructuredBindingPattern(ParsedStmtContext StmtCtx);
+  StmtResult ParseTypedPattern(ParsedStmtContext StmtCtx);
+  StmtResult ParseCasePattern(ParsedStmtContext StmtCtx);
+  StmtResult ParseBindingPattern(ParsedStmtContext StmtCtx);
+  StmtResult ParseParenthesisedPattern(ParsedStmtContext);
+
   StmtResult ParseCaseStatement(ParsedStmtContext StmtCtx,
                                 bool MissingCase = false,
                                 ExprResult Expr = ExprResult());
