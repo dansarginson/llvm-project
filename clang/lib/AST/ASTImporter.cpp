@@ -5951,7 +5951,7 @@ ExpectedStmt ASTNodeImporter::VisitInspectStmt(InspectStmt *S) {
   if (!Imp)
     return Imp.takeError();
 
-  Stmt *ToInit, *ToBody;
+  Stmt *ToInit;
   VarDecl *ToConditionVariable;
   Expr *ToCond;
   SourceLocation ToInspectLoc;
