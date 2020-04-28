@@ -127,9 +127,9 @@ CoroutineBodyStmt::CoroutineBodyStmt(CoroutineBodyStmt::CtorArgs const &Args)
 }
 
 InspectStmt::InspectStmt(const ASTContext &Ctx, Stmt *Init, VarDecl *Var,
-                         Expr *Cond, bool IsConstexpr)
+                         Expr *Cond, bool IsConstexpr, bool ExplicitResultType)
     : Stmt(InspectStmtClass), FirstPattern(nullptr),
-      ConstexprInspect(IsConstexpr) {
+      ConstexprInspect(IsConstexpr), ExplicitResultType(ExplicitResultType) {
 
   bool HasInit = Init != nullptr;
   bool HasVar = Var != nullptr;
@@ -148,17 +148,19 @@ InspectStmt::InspectStmt(const ASTContext &Ctx, Stmt *Init, VarDecl *Var,
 
 InspectStmt::InspectStmt(EmptyShell Empty, bool HasInit, bool HasVar)
     : Stmt(InspectStmtClass, Empty), FirstPattern(nullptr),
-      ConstexprInspect(false) {
+      ConstexprInspect(false), ExplicitResultType(false) {
 
   InspectStmtBits.HasInit = HasInit;
   InspectStmtBits.HasVar = HasVar;
 }
 
 InspectStmt *InspectStmt::Create(const ASTContext &Ctx, Stmt *Init,
-                                 VarDecl *Var, Expr *Cond, bool IsConstexpr) {
+                                 VarDecl *Var, Expr *Cond, bool IsConstexpr,
+                                 bool ExplicitResultType) {
   void *Mem = Ctx.Allocate(totalSizeToAlloc<Stmt *>(NumMandatoryStmtPtr),
                            alignof(InspectStmt));
-  return new (Mem) InspectStmt(Ctx, Init, Var, Cond, IsConstexpr);
+  return new (Mem)
+      InspectStmt(Ctx, Init, Var, Cond, IsConstexpr, ExplicitResultType);
 }
 
 InspectStmt *InspectStmt::CreateEmpty(const ASTContext &Ctx, bool HasInit,

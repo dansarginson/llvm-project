@@ -849,14 +849,15 @@ StmtResult Sema::ActOnStartOfSwitchStmt(SourceLocation SwitchLoc,
 
 StmtResult Sema::ActOnStartOfInspectStmt(SourceLocation InspectLoc,
                                          Stmt *InitStmt, ConditionResult Cond,
-                                         bool IsConstexpr) {
+                                         bool IsConstexpr,
+                                         bool ExplicitReturnType) {
   Expr *CondExpr = Cond.get().second;
   assert((Cond.isInvalid() || CondExpr) && "inspect with no condition");
 
   setFunctionHasBranchIntoScope();
 
   auto *IS = InspectStmt::Create(Context, InitStmt, Cond.get().first, CondExpr,
-                                 IsConstexpr);
+                                 IsConstexpr, ExplicitReturnType);
   getCurFunction()->InspectStack.push_back(
       FunctionScopeInfo::InspectInfo(IS, false));
   return IS;

@@ -4222,7 +4222,8 @@ public:
   StmtResult ActOnFinishSwitchStmt(SourceLocation SwitchLoc,
                                            Stmt *Switch, Stmt *Body);
   StmtResult ActOnStartOfInspectStmt(SourceLocation InspectLoc, Stmt *InitStmt,
-                                     ConditionResult Cond, bool IsConstexpr);
+                                     ConditionResult Cond, bool IsConstexpr,
+                                     bool ExplicitReturnType);
   StmtResult ActOnFinishInspectStmt(SourceLocation InspectLoc, Stmt *Inspect,
                                     Stmt *Body);
   StmtResult ActOnWhileStmt(SourceLocation WhileLoc, ConditionResult Cond,

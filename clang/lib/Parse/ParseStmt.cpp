@@ -1836,8 +1836,19 @@ StmtResult Parser::ParseInspectStatement(ParsedAttributesWithRange &attrs,
                                 Sema::ConditionKind::Inspect))
     return StmtError();
 
-  StmtResult Inspect = Actions.ActOnStartOfInspectStmt(InspectLoc, Init.get(),
-                                                       Cond, IsConstexpr);
+  // Parse trailing-return-type[opt].
+  TypeResult TrailingReturnType(true);
+  if (Tok.is(tok::arrow)) {
+    SourceRange Range;
+    TrailingReturnType =
+        ParseTrailingReturnType(Range, /*MayBeFollowedByDirectInit*/ false);
+  }
+
+  // TODO: We'll want to pass the return type through to the
+  // underlying expression, *when* inspect() is actually InspectExpr
+  const bool ExplicitReturnType = !TrailingReturnType.isInvalid();
+  StmtResult Inspect = Actions.ActOnStartOfInspectStmt(
+      InspectLoc, Init.get(), Cond, IsConstexpr, ExplicitReturnType);
   if (Inspect.isInvalid()) {
     // Skip the inspect body.
     if (Tok.is(tok::l_brace)) {

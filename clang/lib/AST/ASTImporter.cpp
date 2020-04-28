@@ -6043,12 +6043,13 @@ ExpectedStmt ASTNodeImporter::VisitInspectStmt(InspectStmt *S) {
   auto ToCond = importChecked(Err, S->getCond());
   auto ToInspectLoc = importChecked(Err, S->getInspectLoc());
   auto ToIsConstexpr = S->isConstexpr();
+  auto ToHasExplicitResultType = S->hasExplicitResultType();
   if (Err)
     return std::move(Err);
 
   auto *ToStmt =
       InspectStmt::Create(Importer.getToContext(), ToInit, ToConditionVariable,
-                          ToCond, ToIsConstexpr);
+                          ToCond, ToIsConstexpr, ToHasExplicitResultType);
   ToStmt->setInspectLoc(ToInspectLoc);
 
   // Now we have to re-chain the patterns.

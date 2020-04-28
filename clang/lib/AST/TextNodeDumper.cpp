@@ -673,6 +673,13 @@ void TextNodeDumper::VisitInspectStmt(const InspectStmt *Node) {
     OS << " has_init";
   if (Node->hasVarStorage())
     OS << " has_var";
+
+  // TODO: when InspectStmt becomes InspectExpr we should
+  // match LambdaExpr's printing behavior and output `-> typename`
+  if (Node->hasExplicitResultType())
+    OS << " has_explicit_result_type";
+  else
+    OS << " has_implicit_result_type";
 }
 void TextNodeDumper::VisitWildcardPatternStmt(const WildcardPatternStmt *Node) {
   if (Node->hasPatternGuard())
