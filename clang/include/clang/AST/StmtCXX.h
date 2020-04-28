@@ -18,6 +18,7 @@
 #include "clang/AST/NestedNameSpecifier.h"
 #include "clang/AST/Stmt.h"
 #include "clang/Lex/Token.h"
+#include "clang/Sema/Ownership.h"
 #include "llvm/Support/Compiler.h"
 
 namespace clang {
@@ -1011,6 +1012,9 @@ class InspectStmt final : public Stmt,
   // True if this is a constexpr inspect
   bool ConstexprInspect;
 
+  /// Trailing return type for this inspect
+  TypeResult TrailingReturnType;
+
   // InspectStmt is followed by several trailing objects,
   // some of which optional. Note that it would be more convenient to
   // put the optional trailing objects at the end but this would change
@@ -1044,7 +1048,7 @@ class InspectStmt final : public Stmt,
 
   /// Build an inspect statement.
   InspectStmt(const ASTContext &Ctx, Stmt *Init, VarDecl *Var, Expr *Cond,
-              bool IsConstexpr);
+              bool IsConstexpr, TypeResult ReturnType);
 
   /// Build an empty inspect statement.
   explicit InspectStmt(EmptyShell Empty, bool HasInit, bool HasVar);
@@ -1052,7 +1056,8 @@ class InspectStmt final : public Stmt,
 public:
   /// Create an inspect statement.
   static InspectStmt *Create(const ASTContext &Ctx, Stmt *Init, VarDecl *Var,
-                             Expr *Cond, bool IsConstexpr);
+                             Expr *Cond, bool IsConstexpr,
+                             TypeResult ReturnType);
 
   /// Create an empty inspect statement optionally with storage for
   /// an init expression and a condition variable.
@@ -1170,6 +1175,8 @@ public:
   }
 
   bool isConstexpr() const { return ConstexprInspect; }
+
+  TypeResult getTrailingReturnType() const { return TrailingReturnType; }
 
   // Iterators
   child_range children() {

@@ -1836,8 +1836,16 @@ StmtResult Parser::ParseInspectStatement(ParsedAttributesWithRange &attrs,
                                 Sema::ConditionKind::Inspect))
     return StmtError();
 
-  StmtResult Inspect = Actions.ActOnStartOfInspectStmt(InspectLoc, Init.get(),
-                                                       Cond, IsConstexpr);
+  // Parse trailing-return-type[opt].
+  TypeResult TrailingReturnType;
+  if (Tok.is(tok::arrow)) {
+    SourceRange Range;
+    TrailingReturnType =
+        ParseTrailingReturnType(Range, /*MayBeFollowedByDirectInit*/ false);
+  }
+
+  StmtResult Inspect = Actions.ActOnStartOfInspectStmt(
+      InspectLoc, Init.get(), Cond, IsConstexpr, TrailingReturnType);
   if (Inspect.isInvalid()) {
     // Skip the inspect body.
     if (Tok.is(tok::l_brace)) {

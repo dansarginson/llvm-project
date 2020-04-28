@@ -17,3 +17,25 @@ void BasicWorkingInspects() {
 
   inspect constexpr(42) {}
 }
+
+void trailingReturnTypes() {
+  inspect(42) -> int {
+    __:;
+  }
+
+  inspect(42) -> decltype(1) {
+    __:;
+  }
+
+  inspect(42) -> void {
+    __:;
+  }
+
+  inspect(42) -> { // expected-error {{expected a type}}
+    __:;
+  }
+
+  inspect(42) -> foo { // expected-error {{unknown type name 'foo'}}
+    __:;
+  }
+}

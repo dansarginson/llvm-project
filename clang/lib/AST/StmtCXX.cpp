@@ -127,9 +127,9 @@ CoroutineBodyStmt::CoroutineBodyStmt(CoroutineBodyStmt::CtorArgs const &Args)
 }
 
 InspectStmt::InspectStmt(const ASTContext &Ctx, Stmt *Init, VarDecl *Var,
-                         Expr *Cond, bool IsConstexpr)
+                         Expr *Cond, bool IsConstexpr, TypeResult ReturnType)
     : Stmt(InspectStmtClass), FirstPattern(nullptr),
-      ConstexprInspect(IsConstexpr) {
+      ConstexprInspect(IsConstexpr), TrailingReturnType(ReturnType) {
 
   bool HasInit = Init != nullptr;
   bool HasVar = Var != nullptr;
@@ -155,10 +155,11 @@ InspectStmt::InspectStmt(EmptyShell Empty, bool HasInit, bool HasVar)
 }
 
 InspectStmt *InspectStmt::Create(const ASTContext &Ctx, Stmt *Init,
-                                 VarDecl *Var, Expr *Cond, bool IsConstexpr) {
+                                 VarDecl *Var, Expr *Cond, bool IsConstexpr,
+                                 TypeResult ReturnType) {
   void *Mem = Ctx.Allocate(totalSizeToAlloc<Stmt *>(NumMandatoryStmtPtr),
                            alignof(InspectStmt));
-  return new (Mem) InspectStmt(Ctx, Init, Var, Cond, IsConstexpr);
+  return new (Mem) InspectStmt(Ctx, Init, Var, Cond, IsConstexpr, ReturnType);
 }
 
 InspectStmt *InspectStmt::CreateEmpty(const ASTContext &Ctx, bool HasInit,
