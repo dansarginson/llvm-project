@@ -1176,13 +1176,13 @@ TEST(SwitchCase, MatchesSwitch) {
 }
 
 TEST(PatternMatching, MatchesInspect) {
-  EXPECT_TRUE(matchesConditionally("void x() { inspect(42) { __:; } }", InspectExpr(), true, "-fpattern-matching"));
-  EXPECT_TRUE(matchesConditionally("void x() { inspect(42) { 42:; } }", InspectExpr(), true, "-fpattern-matching"));
-  EXPECT_TRUE(matchesConditionally("void x() { int y=0; inspect(42) { y:; } }", InspectExpr(), true, "-fpattern-matching"));
-  EXPECT_TRUE(matchesConditionally("void x() { }", InspectExpr(), false, "-fpattern-matching"));
+  EXPECT_TRUE(matchesConditionally("void x() { inspect(42) { __:; } }", inspectExpr(), true, "-fpattern-matching"));
+  EXPECT_TRUE(matchesConditionally("void x() { inspect(42) { 42:; } }", inspectExpr(), true, "-fpattern-matching"));
+  EXPECT_TRUE(matchesConditionally("void x() { int y=0; inspect(42) { y:; } }", inspectExpr(), true, "-fpattern-matching"));
+  EXPECT_TRUE(matchesConditionally("void x() { }", inspectExpr(), false, "-fpattern-matching"));
 
-  EXPECT_TRUE(matchesConditionally("void x() { struct A{int x;}; A a = {42}; inspect(a) { __:; } }", InspectExpr(), true, "-fpattern-matching"));
-  EXPECT_TRUE(matchesConditionally("void x() { struct A{int x; bool operator==(const A& other) { return x == other.x; } }; A a = {42}; A b = a; inspect(a) { b:; } }", InspectExpr(), true, "-fpattern-matching"));
+  EXPECT_TRUE(matchesConditionally("void x() { struct A{int x;}; A a = {42}; inspect(a) { __:; } }", inspectExpr(), true, "-fpattern-matching"));
+  EXPECT_TRUE(matchesConditionally("void x() { struct A{int x; bool operator==(const A& other) { return x == other.x; } }; A a = {42}; A b = a; inspect(a) { b:; } }", inspectExpr(), true, "-fpattern-matching"));
 }
 
 TEST(PatternMatching, MatchesPattern) {
