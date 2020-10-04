@@ -3,13 +3,19 @@
 void noParen() {
   inspect 42 { // expected-error {{expected '(' after 'inspect'}}
     __ => {};
-  }
+  };
 }
 
 void noParenConstExpr() {
   inspect constexpr 42 { // expected-error {{expected '(' after 'constexpr'}}
     __ => {};
-  }
+  };
+}
+
+void noSemiColon() {
+  inspect(42) {
+    __ => {};
+  } // expected-error {{expected ';' after expression}}
 }
 
 void trailingReturnTypes() {

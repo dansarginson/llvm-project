@@ -3990,7 +3990,7 @@ ExprResult Parser::ParseInspectExpr() {
   //
   // inspect (...) { ... }
   //               ^
-  StmtResult Body(ParseStatement());
+  StmtResult Body(ParseCompoundStatementBody(/*bool isStmtExpr*/true));
 
   // Pop the scopes.
   InnerScope.Exit();
