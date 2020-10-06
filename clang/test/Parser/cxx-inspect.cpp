@@ -51,6 +51,35 @@ void trailingReturnTypes() {
   };
 }
 
+void returnTypeDeduction() {
+  inspect(42) {
+    42 => 42;
+    43 => 43;
+    __ => !{}; // exclude last from type deduction
+  };
+
+  inspect(42) {
+    42 => 42;
+    __ => !{}; // exclude middle from type deduction
+    43 => 43;
+  };
+
+  inspect(42) {
+    __ => !{}; // exclude first from type deduction
+    42 => 42;
+    43 => 43;
+  };
+
+  inspect(42) {
+    __ => !{}; // exclude only pattern
+  };
+
+  inspect(42) {
+    42 => 42;
+    __ => !throw "whoops"; // expected-error {{expected '{' after '!'}}
+  };
+}
+
 // Identifier pattern parsing
 int id_pat0() {
   int x = 3;
