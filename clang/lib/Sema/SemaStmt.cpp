@@ -516,13 +516,14 @@ Sema::ActOnDefaultStmt(SourceLocation DefaultLoc, SourceLocation ColonLoc,
 
 StmtResult Sema::ActOnWildcardPattern(SourceLocation WildcardLoc,
                                       SourceLocation ColonLoc, Stmt *SubStmt,
-                                      Expr *PatternGuard) {
+                                      Expr *PatternGuard,
+                                      SourceLocation ExclaimLoc) {
 
   if (getCurFunction()->InspectStack.empty())
     return StmtError();
 
-  auto *WPS =
-      WildcardPatternStmt::Create(Context, WildcardLoc, ColonLoc, PatternGuard);
+  auto *WPS = WildcardPatternStmt::Create(Context, WildcardLoc, ColonLoc,
+                                          PatternGuard, ExclaimLoc);
   WPS->setSubStmt(SubStmt);
   getCurFunction()->InspectStack.back().getPointer()->addPattern(WPS);
   return WPS;
@@ -531,7 +532,8 @@ StmtResult Sema::ActOnWildcardPattern(SourceLocation WildcardLoc,
 StmtResult Sema::ActOnIdentifierPattern(SourceLocation IdentifierLoc,
                                         SourceLocation ColonLoc,
                                         IdentifierInfo *II, Stmt *SubStmt,
-                                        Expr *PatternGuard) {
+                                        Expr *PatternGuard,
+                                        SourceLocation ExclaimLoc) {
   if (getCurFunction()->InspectStack.empty())
     return StmtError();
   InspectExpr *Inspect = getCurFunction()->InspectStack.back().getPointer();
@@ -586,7 +588,7 @@ StmtResult Sema::ActOnIdentifierPattern(SourceLocation IdentifierLoc,
         ActOnDeclStmt(ConvertDeclToDeclGroup(NewVD), ColonLoc, ColonLoc);
 
   auto *IPS = IdentifierPatternStmt::Create(Context, IdentifierLoc, ColonLoc,
-                                            PatternGuard);
+                                            PatternGuard, ExclaimLoc);
   IPS->setVar(NewVDStmt.get());
   IPS->setSubStmt(SubStmt);
   Inspect->addPattern(IPS);
@@ -641,7 +643,7 @@ ExprResult Sema::CheckPatternConstantExpr(Expr *MatchExpr,
 StmtResult Sema::ActOnExpressionPattern(SourceLocation MatchExprLoc,
                                         SourceLocation ColonLoc,
                                         Expr *MatchExpr, Stmt *SubStmt,
-                                        Expr *PatternGuard, bool HasCase) {
+                                        Expr *PatternGuard, bool HasCase, SourceLocation ExclaimLoc) {
 
   if (getCurFunction()->InspectStack.empty() || !MatchExpr)
     return StmtError();
@@ -659,7 +661,7 @@ StmtResult Sema::ActOnExpressionPattern(SourceLocation MatchExprLoc,
                  Inspect->getCond(), ER.isInvalid() ? MatchExpr : ER.get());
 
   auto *EPS = ExpressionPatternStmt::Create(Context, MatchExprLoc, ColonLoc,
-                                            PatternGuard);
+                                            PatternGuard, ExclaimLoc);
   EPS->setMatchCond(MatchCond.get());
   EPS->setSubStmt(SubStmt);
   EPS->setHasCase(HasCase);

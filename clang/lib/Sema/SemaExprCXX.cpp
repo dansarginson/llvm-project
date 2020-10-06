@@ -8769,13 +8769,22 @@ ExprResult Sema::ActOnFinishInspectExpr(SourceLocation InspectLoc,
     return QualType();
   };
 
-  // Inspect must have at least one pattern
   if (!P)
     return ExprError();
 
-  QualType ResTy =
-      (IE->hasExplicitResultType() ? IE->getType() : getPatternExprType(P))
-          .getUnqualifiedType();
+  // See if we can deduce a type for the inspect expression
+  // at this point, using either the explicit return type or the
+  // deduced return type of the first pattern.
+  // If there is no explicit type deduction and the first pattern
+  // is manually excluded from type deduction, we will have to
+  // start deducing the type from the first pattern that is not
+  // excluded from type deduction.
+  Optional<QualType> ResTy;
+  if (IE->hasExplicitResultType()) {
+    ResTy = IE->getType();
+  } else if (!P->excludedFromTypeDeduction()) {
+    ResTy = getPatternExprType(P).getUnqualifiedType();
+  }
 
   // Check all patterns return the same type by comparing to either
   // the trailing result type or resulting type found in first pattern's
@@ -8784,17 +8793,41 @@ ExprResult Sema::ActOnFinishInspectExpr(SourceLocation InspectLoc,
     // FIXME: Should we be looking into the unqualified type here?
     QualType PatternResTy = getPatternExprType(P).getUnqualifiedType();
 
-    if (Context.getCanonicalType(ResTy) ==
-        Context.getCanonicalType(PatternResTy))
+    // several reasons we may consider this pattern "good" from
+    // a type deduction point of view:
+
+    // 1: This pattern matches the current candidate type
+    if (ResTy) {
+      if (Context.getCanonicalType(*ResTy) ==
+          Context.getCanonicalType(PatternResTy))
+        continue;
+    }
+
+    // 2: There is no current candidate return type and this
+    // pattern is providing that type.
+    if (!ResTy && !P->excludedFromTypeDeduction()) {
+      ResTy = getPatternExprType(P).getUnqualifiedType();
+      continue;
+    }
+
+    // 3: This pattern is excluded from type deduction
+    if (P->excludedFromTypeDeduction())
       continue;
 
     Diag(P->getSubStmt()->getBeginLoc(),
          diag::err_typecheck_pattern_type_incompatible)
-        << PatternResTy << ResTy << IE->hasExplicitResultType();
+        << PatternResTy << *ResTy << IE->hasExplicitResultType();
   }
 
-  if (!IE->hasExplicitResultType())
-    IE->setType(ResTy);
+  // We should know a return type for the inspect expression
+  // by this time. We should provide a diag if this is not the case.
+  if (!IE->hasExplicitResultType()) {
+    if (ResTy) {
+      IE->setType(*ResTy);
+    } else {
+      return ExprError();
+    }
+  }
 
   // TODO: exaustiviness checking...
   return IE;

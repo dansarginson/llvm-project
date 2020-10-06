@@ -42,6 +42,21 @@ void f(int x) {
   };
 }
 
+void baz() { }
+void f1(int x) {
+  inspect(x) -> int {
+    42 => 42;
+    __ => !{ baz(); }; // ok because not participating in type deduction
+  };
+}
+
+void f2(int x) {
+  inspect(x) -> int {
+    __ => !{ baz(); };  // ok because not participating in type deduction
+    42 => 42;
+  };
+}
+
 void g(int x) {
   inspect(x) -> void {
     1 => (void)3;

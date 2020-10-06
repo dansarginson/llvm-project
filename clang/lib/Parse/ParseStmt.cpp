@@ -755,7 +755,20 @@ StmtResult Parser::ParseWildcardPattern(ParsedStmtContext StmtCtx) {
     SkipUntil(tok::semi);
     return StmtError();
   }
-  SourceLocation ColonLoc = ConsumeToken();
+  SourceLocation ArrowLoc = ConsumeToken();
+
+  // Parse whether this pattern contributes to
+  // return type deduction
+  SourceLocation ExclaimLoc;
+  if (Tok.is(tok::exclaim)) {
+    ExclaimLoc = ConsumeToken();
+
+    if (!Tok.is(tok::l_brace)) {
+      Diag(Tok, diag::err_expected_lbrace_after) << "!";
+      SkipUntil(tok::semi);
+      return StmtError();
+    }
+  }
 
   // Parse the statement
   //
@@ -767,12 +780,12 @@ StmtResult Parser::ParseWildcardPattern(ParsedStmtContext StmtCtx) {
   // Broken substmt shouldn't prevent the identifier from being added to the
   // AST.
   if (SubStmt.isInvalid())
-    SubStmt = Actions.ActOnNullStmt(ColonLoc);
+    SubStmt = Actions.ActOnNullStmt(ArrowLoc);
 
   PatternScope.Exit();
 
-  return Actions.ActOnWildcardPattern(WildcardLoc, ColonLoc, SubStmt.get(),
-                                      Cond.get().second);
+  return Actions.ActOnWildcardPattern(WildcardLoc, ArrowLoc, SubStmt.get(),
+                                      Cond.get().second, ExclaimLoc);
 }
 
 /// ParseIdentifierPattern - We have an identifier that matches any value
@@ -811,10 +824,23 @@ StmtResult Parser::ParseIdentifierPattern(ParsedStmtContext StmtCtx) {
     if (Tok.is(tok::equal) && NextToken().is(tok::greater))
       ConsumeToken();
   }
-  SourceLocation ColonLoc = ConsumeToken();
+  SourceLocation ArrowLoc = ConsumeToken();
 
-  auto IPS = Actions.ActOnIdentifierPattern(IdentifierLoc, ColonLoc, II,
-                                            nullptr, Cond.get().second);
+  // Parse whether this pattern contributes to
+  // return type deduction
+  SourceLocation ExclaimLoc;
+  if (Tok.is(tok::exclaim)) {
+    ExclaimLoc = ConsumeToken();
+
+    if (!Tok.is(tok::l_brace)) {
+      Diag(Tok, diag::err_expected_lbrace_after) << "!";
+      SkipUntil(tok::semi);
+      return StmtError();
+    }
+  }
+
+  auto IPS = Actions.ActOnIdentifierPattern(
+      IdentifierLoc, ArrowLoc, II, nullptr, Cond.get().second, ExclaimLoc);
 
   // Parse the statement
   //
@@ -826,7 +852,7 @@ StmtResult Parser::ParseIdentifierPattern(ParsedStmtContext StmtCtx) {
   // Broken substmt shouldn't prevent the identifier from being added to the
   // AST.
   if (SubStmt.isInvalid())
-    SubStmt = Actions.ActOnNullStmt(ColonLoc);
+    SubStmt = Actions.ActOnNullStmt(ArrowLoc);
 
   IdentifierPatternStmt *IP = dyn_cast<IdentifierPatternStmt>(IPS.get());
   IP->setSubStmt(SubStmt.get());
@@ -883,7 +909,20 @@ StmtResult Parser::ParseExpressionPattern(ParsedStmtContext StmtCtx,
     if (Tok.is(tok::equal) && NextToken().is(tok::greater))
       ConsumeToken();
   }
-  SourceLocation ColonLoc = ConsumeToken();
+  SourceLocation ArrowLoc = ConsumeToken();
+
+  // Parse whether this pattern contributes to
+  // return type deduction
+  SourceLocation ExclaimLoc;
+  if (Tok.is(tok::exclaim)) {
+    ExclaimLoc = ConsumeToken();
+
+    if (!Tok.is(tok::l_brace)) {
+      Diag(Tok, diag::err_expected_lbrace_after) << "!";
+      SkipUntil(tok::semi);
+      return StmtError();
+    }
+  }
 
   // Parse the statement
   //
@@ -892,13 +931,13 @@ StmtResult Parser::ParseExpressionPattern(ParsedStmtContext StmtCtx,
   //                                             ^
   StmtResult SubStmt = ParseStatement(nullptr, StmtCtx);
   if (SubStmt.isInvalid())
-    SubStmt = Actions.ActOnNullStmt(ColonLoc);
+    SubStmt = Actions.ActOnNullStmt(ArrowLoc);
   if (Matcher.isInvalid())
     return StmtError();
 
   auto EPS =
-      Actions.ActOnExpressionPattern(MatcherLoc, ColonLoc, Matcher.get(),
-                                     SubStmt.get(), Cond.get().second, HasCase);
+      Actions.ActOnExpressionPattern(MatcherLoc, ArrowLoc, Matcher.get(),
+                                     SubStmt.get(), Cond.get().second, HasCase, ExclaimLoc);
 
   PatternScope.Exit();
   return EPS;

@@ -4201,14 +4201,16 @@ public:
   // pattern matching patterns
   StmtResult ActOnWildcardPattern(SourceLocation WildcardLoc,
                                   SourceLocation ColonLoc, Stmt *SubStmt,
-                                  Expr *PatternGuard);
+                                  Expr *PatternGuard,
+                                  SourceLocation ExclaimLoc);
   StmtResult ActOnIdentifierPattern(SourceLocation IdentifierLoc,
                                     SourceLocation ColonLoc, IdentifierInfo *II,
-                                    Stmt *SubStmt, Expr *PatternGuard);
+                                    Stmt *SubStmt, Expr *PatternGuard,
+                                    SourceLocation ExclaimLoc);
   StmtResult ActOnExpressionPattern(SourceLocation CstExprLoc,
                                     SourceLocation ColonLoc, Expr *CstExpr,
                                     Stmt *SubStmt, Expr *PatternGuard,
-                                    bool HasCase);
+                                    bool HasCase, SourceLocation ExclaimLoc);
   ExprResult CheckPatternConstantExpr(Expr *MatchExpr,
                                       SourceLocation MatchExprLoc);
   class ConditionResult;
