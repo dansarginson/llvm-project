@@ -8757,6 +8757,8 @@ ExprResult Sema::ActOnFinishInspectExpr(SourceLocation InspectLoc,
     // happen when (1) empty pattern body or (2) error recovery when expression
     // type does not match the trailing result type. In all cases treat as
     // the expression has void type.
+    if (PS->excludedFromTypeDeduction())
+      return QualType();
     if (isa<CompoundStmt>(PS->getSubStmt()) || isa<NullStmt>(P->getSubStmt()))
       return Context.VoidTy;
     if (auto *S = dyn_cast<WildcardPatternStmt>(PS))
@@ -8779,56 +8781,51 @@ ExprResult Sema::ActOnFinishInspectExpr(SourceLocation InspectLoc,
   // is manually excluded from type deduction, we will have to
   // start deducing the type from the first pattern that is not
   // excluded from type deduction.
-  Optional<QualType> ResTy;
-  if (IE->hasExplicitResultType()) {
-    ResTy = IE->getType();
-  } else if (!P->excludedFromTypeDeduction()) {
-    ResTy = getPatternExprType(P).getUnqualifiedType();
-  }
+  QualType ResTy =
+      IE->hasExplicitResultType() ? IE->getType() : getPatternExprType(P);
+  if (!ResTy.isNull())
+    ResTy = ResTy.getUnqualifiedType();
 
   // Check all patterns return the same type by comparing to either
   // the trailing result type or resulting type found in first pattern's
   // expression.
   for (; P != nullptr; P = P->getNextPattern()) {
-    // FIXME: Should we be looking into the unqualified type here?
-    QualType PatternResTy = getPatternExprType(P).getUnqualifiedType();
+    QualType PatternResTy = getPatternExprType(P);
 
-    // several reasons we may consider this pattern "good" from
-    // a type deduction point of view:
+    // can't proceed meaningfully if the pattern doesn't play
+    // into type deduction
+    if (PatternResTy.isNull())
+      continue;
 
-    // 1: This pattern matches the current candidate type
-    if (ResTy) {
-      if (Context.getCanonicalType(*ResTy) ==
+    if (ResTy.isNull()) {
+      // There is no current candidate return type and this
+      // pattern is providing that type.
+      // FIXME: Should we be looking into the unqualified type here?
+      ResTy = PatternResTy.getUnqualifiedType();
+      continue;
+    } else {
+      // This pattern matches the current candidate type
+      if (Context.getCanonicalType(ResTy) ==
           Context.getCanonicalType(PatternResTy))
         continue;
     }
 
-    // 2: There is no current candidate return type and this
-    // pattern is providing that type.
-    if (!ResTy && !P->excludedFromTypeDeduction()) {
-      ResTy = getPatternExprType(P).getUnqualifiedType();
-      continue;
-    }
-
-    // 3: This pattern is excluded from type deduction
-    if (P->excludedFromTypeDeduction())
-      continue;
-
     Diag(P->getSubStmt()->getBeginLoc(),
          diag::err_typecheck_pattern_type_incompatible)
-        << PatternResTy << *ResTy << IE->hasExplicitResultType();
+        << PatternResTy << ResTy << IE->hasExplicitResultType();
   }
 
   // We should know a return type for the inspect expression
   // by this time. We should provide a diag if this is not the case.
   if (!IE->hasExplicitResultType()) {
-    if (ResTy) {
-      IE->setType(*ResTy);
+    if (!ResTy.isNull()) {
+      IE->setType(ResTy);
     } else {
+      Diag(IE->getBeginLoc(), diag::err_typecheck_no_valid_return_type);
       return ExprError();
     }
   }
 
-  // TODO: exaustiviness checking...
+  // TODO: exaustiveness checking...
   return IE;
 }

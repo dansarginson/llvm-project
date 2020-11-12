@@ -4202,15 +4202,16 @@ public:
   StmtResult ActOnWildcardPattern(SourceLocation WildcardLoc,
                                   SourceLocation ColonLoc, Stmt *SubStmt,
                                   Expr *PatternGuard,
-                                  SourceLocation ExclaimLoc);
+                                  bool ExcludedFromTypeDeduction);
   StmtResult ActOnIdentifierPattern(SourceLocation IdentifierLoc,
                                     SourceLocation ColonLoc, IdentifierInfo *II,
                                     Stmt *SubStmt, Expr *PatternGuard,
-                                    SourceLocation ExclaimLoc);
+                                    bool ExcludedFromTypeDeduction);
   StmtResult ActOnExpressionPattern(SourceLocation CstExprLoc,
                                     SourceLocation ColonLoc, Expr *CstExpr,
                                     Stmt *SubStmt, Expr *PatternGuard,
-                                    bool HasCase, SourceLocation ExclaimLoc);
+                                    bool HasCase,
+                                    bool ExcludedFromTypeDeduction);
   ExprResult CheckPatternConstantExpr(Expr *MatchExpr,
                                       SourceLocation MatchExprLoc);
   class ConditionResult;

@@ -9,6 +9,12 @@ void a() {
   };
 }
 
+void a2() {
+  inspect(42) { // expected-error {{no valid type can be deduced for inspect expression}}
+    __ => !{};
+  };
+}
+
 void b(int x) {
   inspect(x) -> void {
     __ => 3; // expected-error {{cannot initialize statement expression result of type 'void' with an rvalue of type 'int'}}

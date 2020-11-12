@@ -71,10 +71,6 @@ void returnTypeDeduction() {
   };
 
   inspect(42) {
-    __ => !{}; // exclude only pattern
-  };
-
-  inspect(42) {
     42 => 42;
     __ => !throw "whoops"; // expected-error {{expected '{' after '!'}}
   };

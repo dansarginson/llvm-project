@@ -7361,6 +7361,9 @@ def err_typecheck_pattern_type_incompatible : Error<
   "resulting expression type must match trailing result type}0,1}2"
   >;
 
+def err_typecheck_no_valid_return_type : Error<
+  "no valid type can be deduced for inspect expression">;
+
 def note_incomplete_class_and_qualified_id : Note<
   "conformance of forward class %0 to protocol %1 can not be confirmed">;
 def warn_incompatible_qualified_id : Warning<

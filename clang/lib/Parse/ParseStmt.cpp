@@ -785,7 +785,7 @@ StmtResult Parser::ParseWildcardPattern(ParsedStmtContext StmtCtx) {
   PatternScope.Exit();
 
   return Actions.ActOnWildcardPattern(WildcardLoc, ArrowLoc, SubStmt.get(),
-                                      Cond.get().second, ExclaimLoc);
+                                      Cond.get().second, ExclaimLoc.isValid());
 }
 
 /// ParseIdentifierPattern - We have an identifier that matches any value
@@ -839,8 +839,9 @@ StmtResult Parser::ParseIdentifierPattern(ParsedStmtContext StmtCtx) {
     }
   }
 
-  auto IPS = Actions.ActOnIdentifierPattern(
-      IdentifierLoc, ArrowLoc, II, nullptr, Cond.get().second, ExclaimLoc);
+  auto IPS =
+      Actions.ActOnIdentifierPattern(IdentifierLoc, ArrowLoc, II, nullptr,
+                                     Cond.get().second, ExclaimLoc.isValid());
 
   // Parse the statement
   //
@@ -935,9 +936,9 @@ StmtResult Parser::ParseExpressionPattern(ParsedStmtContext StmtCtx,
   if (Matcher.isInvalid())
     return StmtError();
 
-  auto EPS =
-      Actions.ActOnExpressionPattern(MatcherLoc, ArrowLoc, Matcher.get(),
-                                     SubStmt.get(), Cond.get().second, HasCase, ExclaimLoc);
+  auto EPS = Actions.ActOnExpressionPattern(MatcherLoc, ArrowLoc, Matcher.get(),
+                                            SubStmt.get(), Cond.get().second,
+                                            HasCase, ExclaimLoc.isValid());
 
   PatternScope.Exit();
   return EPS;
