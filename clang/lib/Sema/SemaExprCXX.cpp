@@ -8803,12 +8803,12 @@ ExprResult Sema::ActOnFinishInspectExpr(SourceLocation InspectLoc,
       // FIXME: Should we be looking into the unqualified type here?
       ResTy = PatternResTy.getUnqualifiedType();
       continue;
-    } else {
-      // This pattern matches the current candidate type
-      if (Context.getCanonicalType(ResTy) ==
-          Context.getCanonicalType(PatternResTy))
-        continue;
     }
+
+    // This pattern matches the current candidate type
+    if (Context.getCanonicalType(ResTy) ==
+        Context.getCanonicalType(PatternResTy))
+      continue;
 
     Diag(P->getSubStmt()->getBeginLoc(),
          diag::err_typecheck_pattern_type_incompatible)
@@ -8817,14 +8817,12 @@ ExprResult Sema::ActOnFinishInspectExpr(SourceLocation InspectLoc,
 
   // We should know a return type for the inspect expression
   // by this time. We should provide a diag if this is not the case.
-  if (!IE->hasExplicitResultType()) {
-    if (!ResTy.isNull()) {
-      IE->setType(ResTy);
-    } else {
-      Diag(IE->getBeginLoc(), diag::err_typecheck_no_valid_return_type);
-      return ExprError();
-    }
+  if (!IE->hasExplicitResultType() && ResTy.isNull()) {
+    Diag(IE->getBeginLoc(), diag::err_typecheck_no_valid_return_type);
+    return ExprError();
   }
+
+  IE->setType(ResTy);
 
   // TODO: exaustiveness checking...
   return IE;
