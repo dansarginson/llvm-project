@@ -1662,6 +1662,9 @@ ExprResult Parser::ParseCastExpression(CastParseKind ParseKind,
     cutOffParsing();
     return ExprError();
   }
+  case tok::kw_inspect: // C++2b Pattern Matching: inspect-statement
+    Res = ParseInspectExpr();
+    break;
   case tok::l_square:
     if (getLangOpts().CPlusPlus11) {
       if (getLangOpts().ObjC) {
@@ -1688,9 +1691,6 @@ ExprResult Parser::ParseCastExpression(CastParseKind ParseKind,
       break;
     }
     LLVM_FALLTHROUGH;
-  case tok::kw_inspect: // C++2b Pattern Matching: inspect-statement
-    Res = ParseInspectExpr();
-    break;
   default:
     NotCastExpr = true;
     return ExprError();
