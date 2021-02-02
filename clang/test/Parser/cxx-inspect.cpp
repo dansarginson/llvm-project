@@ -6,10 +6,22 @@ void noParen() {
   };
 }
 
+void noCondition() {
+  inspect() { // expected-error {{expected expression}}
+    __ => {};
+  };
+}
+
 void noParenConstExpr() {
   inspect constexpr 42 { // expected-error {{expected '(' after 'constexpr'}}
     __ => {};
   };
+}
+
+void wildcardMissingEqualsArrow() {
+  inspect(42) {
+    __ 7; // expected-error {{expected '=>' after wildcard pattern}}
+  }
 }
 
 void noSemiColon() {
